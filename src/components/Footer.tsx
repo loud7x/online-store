@@ -1,0 +1,111 @@
+import Link from "next/link";
+
+const footerLinks = {
+  marketplace: [
+    { href: "/accounts", label: "Browse Accounts" },
+    { href: "/sell", label: "Sell an Account" },
+    { href: "/exchange", label: "Exchange Hub" },
+    { href: "/coins", label: "Coin Loading" },
+  ],
+  support: [
+    { href: "/help", label: "Help Centre" },
+    { href: "/faq", label: "FAQs" },
+    { href: "/contact", label: "Contact Us" },
+    { href: "/orders", label: "Track Order" },
+  ],
+  legal: [
+    { href: "/terms", label: "Terms & Conditions" },
+    { href: "/privacy", label: "Privacy Policy" },
+    { href: "/refunds", label: "Refund Policy" },
+  ],
+};
+
+export default function Footer() {
+  return (
+    <footer className="border-t border-[var(--border)] bg-[var(--card)] mt-auto">
+      <div className="container-main section-padding">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+          {/* Brand */}
+          <div className="sm:col-span-2 lg:col-span-1">
+            <Link href="/" className="flex items-center gap-2 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)] text-white font-bold text-sm">
+                LF
+              </div>
+              <span className="text-lg font-semibold tracking-tight">
+                LOUDE<span className="text-[var(--primary)]">FOOT</span>
+              </span>
+            </Link>
+            <p className="text-sm text-[var(--muted)] leading-relaxed max-w-xs">
+              Premium eFootball account marketplace. Buy, sell, exchange accounts and load coins — all in one place.
+            </p>
+            <p className="mt-4 text-xs text-[var(--muted-foreground)]">
+              Independent platform. Not affiliated with Konami or eFootball.
+            </p>
+          </div>
+
+          {/* Marketplace */}
+          <div>
+            <h3 className="text-sm font-semibold text-white mb-4">Marketplace</h3>
+            <ul className="space-y-2.5">
+              {footerLinks.marketplace.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-[var(--muted)] hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Support */}
+          <div>
+            <h3 className="text-sm font-semibold text-white mb-4">Support</h3>
+            <ul className="space-y-2.5">
+              {footerLinks.support.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-[var(--muted)] hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h3 className="text-sm font-semibold text-white mb-4">Legal</h3>
+            <ul className="space-y-2.5">
+              {footerLinks.legal.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-[var(--muted)] hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-12 pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-[var(--muted-foreground)]">
+            © {new Date().getFullYear()} LOUDEFOOT. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
+            <span>Nigeria · ₦ NGN</span>
+            <span className="hidden sm:inline">·</span>
+            <span className="hidden sm:inline">Secure transactions</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

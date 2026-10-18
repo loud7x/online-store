@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /messages
+Disallow: /checkout
+Disallow: /orders
+
+Sitemap: https://loudefoot.com/sitemap.xml
