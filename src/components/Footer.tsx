@@ -97,7 +97,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[var(--muted-foreground)]">
-            © {new Date().getFullYear()} LOUDEFOOT. All rights reserved.
+            © LOUDEFOOT. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
             <span>Nigeria · ₦ NGN</span>
