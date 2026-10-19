@@ -1,10 +1,13 @@
-export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { featuredAccounts, recentAccounts, formatNaira, formatNumber } from "@/data/mock";
 import type { Metadata } from "next";
 
 const allListings = [...featuredAccounts, ...recentAccounts];
+
+expert function generateStaticParam() {
+  return allListing.map((a) => ({ id: a.id }));
+}
 
 export async function generateMetadata({
   params,

@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { use, useState } from "react";
 import { conversations, messagesByConv, formatMsgTime } from "@/data/messages";

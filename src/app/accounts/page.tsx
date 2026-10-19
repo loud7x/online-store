@@ -1,4 +1,3 @@
-export const dynamic = "force-dynamic";
 import { Suspense } from "react";
 import AccountCard from "@/components/AccountCard";
 import AccountFilters from "@/components/AccountFilters";
