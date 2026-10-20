@@ -1,8 +1,7 @@
 "use client";
-
 import Link from "next/link";
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
+import { createClient } from "@/supabase/client";
 const navLinks = [
   { href: "/accounts", label: "Browse Accounts" },
   { href: "/sell", label: "Sell" },
@@ -12,8 +11,21 @@ const navLinks = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const supabase = createClient();
 
-  return (
+  useEffect(() => {
+    supabse.auth.getSession().then(({ data }) => {
+      setLoggedIn(!!data.session);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setLoggedIn(!!session);
+      }
+     ); 
+  return () => listener.subscription.unsubscribe();
+}, []);  
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-md">
       <div className="container-main">
         <div className="flex h-16 items-center justify-between gap-4">
@@ -48,19 +60,22 @@ export default function Header() {
             >
               Messages
             </Link>
-            <Link
-              href="/login"
-              className="btn btn-ghost px-3 py-2 text-sm"
-            >
-              Log in
+
+        {!loggedIn && (
+             <>
+             <Link href="/login" className=btn px-4 py-2 text-sm"> 
+              Login
             </Link>
+            
             <Link
               href="/register"
               className="btn btn-primary px-4 py-2 text-sm"
             >
               Sign up
             </Link>
-          </div>
+          </>
+        )}
+        </div>
 
           {/* Mobile menu button */}
           <button
