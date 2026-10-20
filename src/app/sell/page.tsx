@@ -224,6 +224,25 @@ export default function SellPage() {
               className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white"
             />
           </div>
+          
+          <div>
+  <label className="mb-2 block text-sm font-medium text-white">
+    WhatsApp Number
+  </label>
+  <input
+    type="tel"
+    value={whatsappNumber}
+    onChange={(event) => setWhatsappNumber(event.target.value)}
+    placeholder="e.g. 2348012345678"
+    maxLength={20}
+    required
+    className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white"
+  />
+  <p className="mt-1 text-xs text-[var(--muted)]">
+    Include your country code, without the + sign.
+  </p>
+</div>
+
 
           <div>
             <label className="mb-2 block text-sm font-medium text-white">
