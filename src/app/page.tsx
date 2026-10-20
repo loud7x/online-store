@@ -48,12 +48,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Demo notice */}
-      <div className="container-main">
-        <div className="rounded-lg border border-[var(--warning)]/30 bg-[var(--warning)]/5 px-4 py-3 text-center text-sm text-[var(--warning)]">
-          Demo content only — sample listings for development. No real transactions.
-        </div>
-      </div>
+
 
       {/* Featured Accounts */}
       <section className="section-padding">
