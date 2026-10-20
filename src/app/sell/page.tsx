@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SellPage() {
   const [title, setTitle] = useState("");
@@ -13,6 +14,7 @@ export default function SellPage() {
   const [video, setVideo] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,11 +62,20 @@ export default function SellPage() {
     setMessage("");
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function makeSafeFileName(file: File) {
+    return file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
 
-    if (!title.trim() || !price || !accountDetails.trim() || !accountStatus) {
+    if (
+      !title.trim() ||
+      !price ||
+      !accountDetails.trim() ||
+      !accountStatus.trim()
+    ) {
       setMessage("Please complete all required fields, including account status.");
       return;
     }
@@ -79,9 +90,90 @@ export default function SellPage() {
       return;
     }
 
-    setMessage(
-      "Your form is valid. Saving listings, pictures, and videos to Supabase still needs to be connected."
-    );
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ) {
+      setMessage("Supabase is not configured. Check your .env.local settings.");
+      return;
+    }
+
+    setLoading(true);
+    const supabase = createClient();
+    let uploadedImagePath: string | null = null;
+    let uploadedVideoPath: string | null = null;
+
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !userData.user) {
+        setMessage("Please log in before publishing an account.");
+        return;
+      }
+
+      const userId = userData.user.id;
+      const imagePath = `${userId}/${crypto.randomUUID()}-${makeSafeFileName(image)}`;
+
+      const { error: imageUploadError } = await supabase.storage
+        .from("account-media")
+        .upload(imagePath, image, {
+          contentType: image.type,
+          upsert: false,
+        });
+
+      if (imageUploadError) {
+        throw new Error(`Picture upload failed: ${imageUploadError.message}`);
+      }
+      uploadedImagePath = imagePath;
+
+      if (video) {
+        const videoPath = `${userId}/${crypto.randomUUID()}-${makeSafeFileName(video)}`;
+        const { error: videoUploadError } = await supabase.storage
+          .from("account-media")
+          .upload(videoPath, video, {
+            contentType: video.type,
+            upsert: false,
+          });
+
+        if (videoUploadError) {
+          throw new Error(`Video upload failed: ${videoUploadError.message}`);
+        }
+        uploadedVideoPath = videoPath;
+      }
+
+      const { error: insertError } = await supabase.from("listings").insert({
+        user_id: userId,
+        game: "eFootball",
+        title: title.trim(),
+        price: Number(price),
+        account_image_url: uploadedImagePath,
+        account_video_url: uploadedVideoPath,
+        account_status: accountStatus.trim(),
+        status_notes: statusNotes.trim() || null,
+        account_details: accountDetails.trim(),
+      });
+
+      if (insertError) {
+        throw new Error(`Listing could not be saved: ${insertError.message}`);
+      }
+
+      setMessage("Success! Your eFootball account listing has been saved to Supabase.");
+    } catch (error) {
+      if (uploadedImagePath || uploadedVideoPath) {
+        const paths = [uploadedImagePath, uploadedVideoPath].filter(
+          (path): path is string => Boolean(path)
+        );
+        await supabase.storage.from("account-media").remove(paths);
+      }
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while publishing. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -249,7 +341,7 @@ export default function SellPage() {
               onChange={(event) => setAccountStatus(event.target.value)}
               maxLength={160}
               required
-              placeholder="e.g. Link deleted, only KONAMI link, double link safe, Google Play login only, Game Center login"
+              placeholder="e.g. Link deleted, Only KONAMI link, Double link, Link safe, Google Play login only, Game Center login"
               className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white placeholder:text-[var(--muted)]"
             />
             <p className="mt-1 text-xs text-[var(--muted)]">
@@ -298,8 +390,12 @@ export default function SellPage() {
             </p>
           )}
 
-          <button type="submit" className="btn btn-primary w-full px-5 py-3">
-            Continue to Publish
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn-primary w-full px-5 py-3 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? "Uploading and saving..." : "Continue to Publish"}
           </button>
         </form>
       </div>
