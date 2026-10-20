@@ -69,7 +69,7 @@ export default function Header() {
             
             <Link
             href="/register" 
-            className=btn btn-primary px-4 py-2 text-sm">
+            className="btn btn-primary px-4 py-2 text-sm">
               Sign up
             </Link>
           </>
