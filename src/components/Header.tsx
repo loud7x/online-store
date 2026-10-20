@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createClient } from "@/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 const navLinks = [
   { href: "/accounts", label: "Browse Accounts" },
   { href: "/sell", label: "Sell" },
@@ -15,7 +15,7 @@ export default function Header() {
   const supabase = createClient();
 
   useEffect(() => {
-    supabse.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       setLoggedIn(!!data.session);
     });
 
