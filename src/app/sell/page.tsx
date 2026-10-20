@@ -152,7 +152,7 @@ export default function SellPage() {
         account_status: accountStatus.trim(),
         status_notes: statusNotes.trim() || null,
         account_details: accountDetails.trim(),
-        whatsapp_number: whatsappNumber.trim(),
+        whatsapp_number: whatsappNumber.trim()
       });
 
       if (insertError) {
@@ -234,7 +234,7 @@ export default function SellPage() {
             <input
               type="tel"
               value={whatsappNumber}
-              onChange={(event)} => setWhatsappNumber(event.target.value)}
+              onChange={(event) => setWhatsappNumber(event.target.value)}
               placeholder="e.g. 2348012345678"
               maxLength={20}
               required
@@ -245,6 +245,7 @@ export default function SellPage() {
             </p>
           </div>
 
+          <div>
             <label className="mb-2 block text-sm font-medium text-white">
               Account picture
             </label>
