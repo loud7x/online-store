@@ -1,3 +1,4 @@
+'use client';
 import Link from "next/link";
 import AccountCard from "@/components/AccountCard";
 import CoinPackageCard from "@/components/CoinPackageCard";
