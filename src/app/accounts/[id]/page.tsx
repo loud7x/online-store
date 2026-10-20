@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 const allListings = [...featuredAccounts, ...recentAccounts];
 
 export function generateStaticParam() {
-  return allListing.map((a) => ({ id: a.id }));
+  return allListings.map((a) => ({ id: a.id }));
 }
 
 export async function generateMetadata({
