@@ -61,20 +61,24 @@ export default function Header() {
               Messages
             </Link>
 
-        {!loggedIn && (
-             <>
-             <Link href="/login" className="btn px-4 py-2 text-sm"> 
+         {!loggedIn && (
+           <>
+             <Link 
+               href="/login" 
+               className="btn px-4 py-2 text-sm"
+            >
               Login
             </Link>
             
             <Link
             href="/register" 
-            className="btn btn-primary px-4 py-2 text-sm">
+            className="btn btn-primary px-4 py-2 text-sm"
+          >
               Sign up
             </Link>
           </>
         )}
-        </div>
+      </div>
 
           {/* Mobile menu button */}
           <button
