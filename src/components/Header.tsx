@@ -34,7 +34,8 @@ return (
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)] text-white font-bold text-sm">
-              LF
+              L
+            </div>
             <span className="text-lg font-semibold tracking-tight text-white">
               LOUDE<span className="text-[var(--primary)]">FOOT</span>
             </span>
