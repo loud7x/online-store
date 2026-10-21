@@ -44,10 +44,18 @@ export default function AccountCard({ account }: AccountCardProps) {
 
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
           <span>OVR {account.overallRating}</span>
-          <span>·</span>
-          <span>{formatNumber(account.coins)} coins</span>
-          <span>·</span>
-          <span>{account.epicPlayers} Epic</span>
+          {account.coins > 0 && (
+            <>
+              <span>·</span>
+              <span>{formatNumber(account.coins)} coins</span>
+            </>
+          )}
+          {account.epicPlayers > 0 && (
+            <>
+              <span>·</span>
+              <span>{account.epicPlayers} Epic</span>
+            </>
+          )}
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)]">
@@ -64,9 +72,11 @@ export default function AccountCard({ account }: AccountCardProps) {
               </svg>
             )}
           </div>
-          <span className="text-xs text-[var(--muted-foreground)]">
-            ★ {account.seller.rating}
-          </span>
+          {account.seller.rating > 0 && (
+            <span className="text-xs text-[var(--muted-foreground)]">
+              ★ {account.seller.rating}
+            </span>
+          )}
         </div>
       </div>
     </Link>
