@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const navLinks = [
+  { href: "/", label: "Home" },
   { href: "/accounts", label: "Browse Accounts" },
   { href: "/sell", label: "Sell" },
   { href: "/exchange", label: "Exchange Hub" },
