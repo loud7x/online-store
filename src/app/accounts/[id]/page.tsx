@@ -16,13 +16,12 @@ export default function AccountDetailPage({ params }: { params: { id: string } }
     async function fetchListing() {
       const { data, error } = await supabase
         .from('listings')
-        .select('*, users:seller_id(id, full_name, username, avatar_url, whatsapp_number)')
+        .select('*, users:seller_id(id, username, is_verified, rating)')
         .eq('id', params.id)
         .single();
 
-      if (!error && data) {
-        setListing(data);
-      }
+      if (error) console.error('Listing fetch error:', error.message);
+      if (data) setListing(data);
       setLoading(false);
     }
 
@@ -58,12 +57,12 @@ export default function AccountDetailPage({ params }: { params: { id: string } }
 
   // Format WhatsApp Link with pre-filled message
   const getWhatsAppLink = () => {
-    const rawNumber = listing?.whatsapp_number || listing?.users?.whatsapp_number;
+    const rawNumber = listing?.whatsapp_number;
     if (!rawNumber) return null;
 
-    const cleanNumber = rawNumber.replace(/\D/g, '');
+    const cleanNumber = String(rawNumber).replace(/\D/g, '');
     const text = encodeURIComponent(
-      `Hello! I am interested in your eFootball listing: "${listing.title}" (₦${listing.price.toLocaleString()}). Is it still available?`
+      `Hello! I am interested in your eFootball listing: "${listing.title}" (₦${Number(listing.price).toLocaleString()}). Is it still available?`
     );
 
     return `https://wa.me/${cleanNumber}?text=${text}`;
@@ -130,27 +129,40 @@ export default function AccountDetailPage({ params }: { params: { id: string } }
             <div>
               <span className="text-sm text-gray-400">Asking Price</span>
               <div className="text-3xl font-bold text-green-400">
-                ₦{listing.price.toLocaleString()}
+                ₦{Number(listing.price).toLocaleString()}
               </div>
             </div>
 
             <div className="space-y-3 pt-4 border-t border-gray-800 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">Squad Rating:</span>
+                <span className="text-gray-400">Team Strength:</span>
                 <span className="text-white font-medium">
-                  {listing.squad_rating || 'N/A'}
+                  {listing.team_strength || listing.squad_rating || 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Manager:</span>
+                <span className="text-gray-400">OVR:</span>
                 <span className="text-white font-medium">
-                  {listing.manager || 'N/A'}
+                  {listing.ovr || 'N/A'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Platform:</span>
+                <span className="text-white font-medium">
+                  {listing.platform || 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">eFootball Coins:</span>
                 <span className="text-yellow-400 font-medium">
-                  🪙 {listing.coins || 0}
+                  🪙 {Number(listing.coins || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Seller:</span>
+                <span className="text-white font-medium">
+                  {listing.users?.username || 'Seller'}
+                  {listing.users?.is_verified ? ' ✓' : ''}
                 </span>
               </div>
             </div>
