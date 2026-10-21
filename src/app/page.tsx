@@ -1,10 +1,10 @@
+
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import AccountCard from "@/components/AccountCard";
 import CoinPackageCard from "@/components/CoinPackageCard";
 import { coinPackages, faqs } from "@/data/mock";
 
-// Always fetch fresh listings
 export const revalidate = 0;
 
 const supabase = createClient(
@@ -12,27 +12,74 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Converts a database row into the shape AccountCard expects.
-function toAccount(l: any) {
+function toAccount(listing: any, imageUrl: string | null) {
   return {
-    ...l,
-    teamStrength: l.team_strength,
+    ...listing,
+    teamStrength: listing.team_strength ?? listing.teamStrength,
+    imageUrl,
     seller: {
-      username: l.seller?.username ?? "Seller",
-      verified: l.seller?.is_verified ?? false,
-      rating: l.seller?.rating ?? 0,
+      username: listing.seller?.username ?? "Seller",
+      verified: listing.seller?.is_verified ?? false,
+      rating: listing.seller?.rating ?? 0,
     },
   };
 }
 
+async function getListingImageUrl(listing: any): Promise<string | null> {
+  const imageValue =
+    (Array.isArray(listing.images) ? listing.images[0] : null) ||
+    listing.account_image_url ||
+    listing.image_url ||
+    null;
+
+  if (typeof imageValue !== "string" || !imageValue.trim()) {
+    return null;
+  }
+
+  const value = imageValue.trim();
+
+  // Already a complete URL.
+  if (value.startsWith("https://") || value.startsWith("http://")) {
+    return value;
+  }
+
+  // The bucket name is not part of the object path passed to Supabase.
+  const path = value
+    .replace(/^\/+/, "")
+    .replace(/^account-media\//, "");
+
+  if (!path) return null;
+
+  const { data, error } = await supabase.storage
+    .from("account-media")
+    .createSignedUrl(path, 3600);
+
+  if (error || !data?.signedUrl) {
+    console.error("Could not load listing image:", error?.message);
+    return null;
+  }
+
+  return data.signedUrl;
+}
+
 export default async function HomePage() {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("listings")
     .select("*, seller:seller_id(username, is_verified, rating)")
+    .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(6);
 
-  const recentAccounts = (data ?? []).map(toAccount);
+  if (error) {
+    console.error("Could not load homepage listings:", error.message);
+  }
+
+  const recentAccounts = await Promise.all(
+    (data ?? []).map(async (listing: any) => {
+      const imageUrl = await getListingImageUrl(listing);
+      return toAccount(listing, imageUrl);
+    })
+  );
 
   return (
     <>
@@ -70,23 +117,30 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Recently Added (real listings) */}
+      {/* Recently Added */}
       <section className="section-padding">
         <div className="container-main">
           <div className="flex items-end justify-between gap-4 mb-8">
             <div>
-              <h2 className="text-xl sm:text-2xl font-semibold text-white">Recently Added</h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">Fresh listings from sellers</p>
+              <h2 className="text-xl sm:text-2xl font-semibold text-white">
+                Recently Added
+              </h2>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Fresh listings from sellers
+              </p>
             </div>
-            <Link href="/accounts" className="text-sm text-[var(--primary)] hover:underline shrink-0">
+            <Link
+              href="/accounts"
+              className="text-sm text-[var(--primary)] hover:underline shrink-0"
+            >
               View all →
             </Link>
           </div>
 
           {recentAccounts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {recentAccounts.map((acc: any) => (
-                <AccountCard key={acc.id} account={acc} />
+              {recentAccounts.map((account: any) => (
+                <AccountCard key={account.id} account={account} />
               ))}
             </div>
           ) : (
@@ -95,7 +149,10 @@ export default async function HomePage() {
               <p className="mt-1 text-sm text-[var(--muted)]">
                 Be the first to sell an eFootball account.
               </p>
-              <Link href="/sell" className="btn btn-primary px-5 py-2.5 text-sm mt-5 inline-flex">
+              <Link
+                href="/sell"
+                className="btn btn-primary px-5 py-2.5 text-sm mt-5 inline-flex"
+              >
                 Sell an Account
               </Link>
             </div>
@@ -103,25 +160,35 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Best Value + Verified Sellers highlight */}
+      {/* Best Value + Verified Sellers */}
       <section className="section-padding bg-[var(--card)]/50">
         <div className="container-main">
           <div className="grid md:grid-cols-2 gap-8">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 md:p-8">
-              <h2 className="text-lg font-semibold text-white mb-2">Best-Value Deals</h2>
+              <h2 className="text-lg font-semibold text-white mb-2">
+                Best-Value Deals
+              </h2>
               <p className="text-sm text-[var(--muted)] mb-6">
                 Strong accounts at competitive prices. Look for the green “Best Value” badge.
               </p>
-              <Link href="/accounts?sort=value" className="btn btn-primary px-5 py-2.5 text-sm">
+              <Link
+                href="/accounts?sort=value"
+                className="btn btn-primary px-5 py-2.5 text-sm"
+              >
                 Browse Best Value
               </Link>
             </div>
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 md:p-8">
-              <h2 className="text-lg font-semibold text-white mb-2">Verified Sellers</h2>
+              <h2 className="text-lg font-semibold text-white mb-2">
+                Verified Sellers
+              </h2>
               <p className="text-sm text-[var(--muted)] mb-6">
                 Trade with confidence. Verified sellers have completed identity checks and maintain strong ratings.
               </p>
-              <Link href="/accounts?verified=true" className="btn btn-secondary px-5 py-2.5 text-sm">
+              <Link
+                href="/accounts?verified=true"
+                className="btn btn-secondary px-5 py-2.5 text-sm"
+              >
                 View Verified Listings
               </Link>
             </div>
@@ -133,7 +200,9 @@ export default async function HomePage() {
       <section className="section-padding">
         <div className="container-main">
           <div className="text-center max-w-xl mx-auto mb-10">
-            <h2 className="text-xl sm:text-2xl font-semibold text-white">Coin Loading Services</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-white">
+              Coin Loading Services
+            </h2>
             <p className="mt-2 text-sm text-[var(--muted)]">
               Fast, tracked coin packages. Choose a pack, place your order, and follow status updates.
             </p>
@@ -185,7 +254,9 @@ export default async function HomePage() {
       <section className="section-padding">
         <div className="container-main">
           <div className="rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--card)] to-[var(--accent)]/20 p-8 md:p-10 text-center">
-            <h2 className="text-xl sm:text-2xl font-semibold text-white">Need Help?</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-white">
+              Need Help?
+            </h2>
             <p className="mt-2 text-sm text-[var(--muted)] max-w-md mx-auto">
               Our support team is available to assist with orders, listings, and account questions.
             </p>
