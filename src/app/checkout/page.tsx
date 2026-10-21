@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const listingId = searchParams.get('listing');
   const router = useRouter();
-  const supabase = createBrowserClient();
+  // Create the client once, so it doesn't change on every render
+  const supabase = useMemo(() => createClient(), []);
 
   const [listing, setListing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -44,20 +45,23 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
         return;
       }
 
-      // Call backend API route to initialize Paystack transaction
-      const response = await fetch('/api/checkout/initialize', {
+      // Calls the payment initialize route (amount is in Naira)
+      const response = await fetch('/api/payments/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           listingId: listing.id,
           amount: listing.price,
           email: user.email,
+          method: 'card',
         }),
       });
 
@@ -66,7 +70,6 @@ export default function CheckoutPage() {
         throw new Error(result.error || 'Failed to initialize payment');
       }
 
-      // Redirect user to Paystack checkout URL
       if (result.authorization_url) {
         window.location.href = result.authorization_url;
       } else {
@@ -146,5 +149,13 @@ export default function CheckoutPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20 text-gray-400">Preparing checkout...</div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

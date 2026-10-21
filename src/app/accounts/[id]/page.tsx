@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { startOrGetConversation } from '@/lib/chat';
 
 export default function AccountDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const supabase = createBrowserClient();
+  const supabase = createClient();
   const [listing, setListing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);

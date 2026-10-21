@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyPayment } from '@/lib/payments/paystack';
+import { verifyPaystackPayment } from '@/lib/payments/methods';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
@@ -15,9 +15,9 @@ export async function GET(request: Request) {
     }
 
     // Verify transaction status with Paystack API
-    const verification = await verifyPayment(reference);
+    const verification = await verifyPaystackPayment(reference);
 
-    if (verification.status !== 'success') {
+    if (!verification || verification.status !== 'success') {
       return NextResponse.json(
         { error: 'Transaction was not successful.' },
         { status: 400 }
@@ -25,14 +25,22 @@ export async function GET(request: Request) {
     }
 
     const listingId = verification.metadata?.listing_id;
-    const supabase = await createClient();
 
-    // Update listing status to sold if applicable
+    // Mark the listing as sold only if the payment was for a listing
     if (listingId) {
-      await supabase
+      const supabase = await createClient();
+      const { error: updateError } = await supabase
         .from('listings')
         .update({ status: 'sold' })
         .eq('id', listingId);
+
+      if (updateError) {
+        console.error('Failed to mark listing as sold:', updateError);
+        return NextResponse.json(
+          { error: 'Payment succeeded but listing could not be updated.' },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
@@ -40,11 +48,10 @@ export async function GET(request: Request) {
       amount: verification.amount,
       reference: verification.reference,
     });
-  } catch (error: any) {
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Server error verifying payment.';
     console.error('Payment verification error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Server error verifying payment.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

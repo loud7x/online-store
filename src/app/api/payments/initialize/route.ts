@@ -1,39 +1,46 @@
-import { NextResponse } from 'next/server';
-import { initializePayment } from '@/lib/payments/paystack';
+import { NextResponse } from "next/server";
+import {
+  initializePaystackPayment,
+  paystackChannelsFor,
+  type PaymentMethodId,
+} from "@/lib/payments/methods";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { listingId, amount, email } = body;
+    const { email, amount, method, listingId } = (await request.json()) as {
+      email: string;
+      amount: number; // in Naira, e.g. 5000 = ₦5,000
+      method: PaymentMethodId;
+      listingId?: string;
+    };
 
-    if (!listingId || !amount || !email) {
+    if (!email || !amount || !method) {
       return NextResponse.json(
-        { error: 'Missing required parameters.' },
+        { error: "Missing required fields." },
         { status: 400 }
       );
     }
 
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/checkout/verify`;
+    const reference = `LF-${crypto.randomUUID()}`;
+    const origin = new URL(request.url).origin;
 
-    const paystackData = await initializePayment({
+    // initializePaystackPayment converts NGN to kobo internally
+    const data = await initializePaystackPayment({
       email,
-      amountInNgn: amount,
-      callbackUrl,
-      metadata: {
-        listing_id: listingId,
-      },
+      amount,
+      reference,
+      callbackUrl: `${origin}/checkout/verify`,
+      channels: paystackChannelsFor(method),
+      metadata: { listing_id: listingId },
     });
 
     return NextResponse.json({
-      authorization_url: paystackData.authorization_url,
-      access_code: paystackData.access_code,
-      reference: paystackData.reference,
+      authorization_url: data.authorization_url,
+      reference: data.reference,
     });
-  } catch (error: any) {
-    console.error('Payment initialization error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to initialize transaction.' },
-      { status: 500 }
-    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Server error.";
+    console.error("Payment initialize error:", error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

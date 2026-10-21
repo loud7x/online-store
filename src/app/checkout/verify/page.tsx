@@ -1,50 +1,58 @@
-import { NextResponse } from 'next/server';
-import { verifyPayment } from '@/lib/payments/paystack';
-import { createClient } from '@/lib/supabase/server';
+"use client";
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const reference = searchParams.get('reference');
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
+function VerifyContent() {
+  const searchParams = useSearchParams();
+  const reference =
+    searchParams.get("reference") || searchParams.get("trxref");
+
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading"
+  );
+  const [message, setMessage] = useState("Verifying your payment...");
+
+  useEffect(() => {
     if (!reference) {
-      return NextResponse.json(
-        { error: 'Missing transaction reference.' },
-        { status: 400 }
-      );
+      setStatus("error");
+      setMessage("No payment reference found.");
+      return;
     }
 
-    // Verify transaction status with Paystack API
-    const verification = await verifyPayment(reference);
+    fetch(`/api/payments/verify?reference=${encodeURIComponent(reference)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setStatus("success");
+          setMessage("Payment successful! Thank you for your purchase.");
+        } else {
+          setStatus("error");
+          setMessage(data.error || "Payment could not be verified.");
+        }
+      })
+      .catch(() => {
+        setStatus("error");
+        setMessage("Could not verify payment. Please contact support.");
+      });
+  }, [reference]);
 
-    if (verification.status !== 'success') {
-      return NextResponse.json(
-        { error: 'Transaction was not successful.' },
-        { status: 400 }
-      );
-    }
+  return (
+    <main style={{ maxWidth: 480, margin: "80px auto", padding: 24, textAlign: "center" }}>
+      <h1 style={{ marginBottom: 16 }}>
+        {status === "loading" && "Please wait"}
+        {status === "success" && "Payment confirmed"}
+        {status === "error" && "Payment issue"}
+      </h1>
+      <p>{message}</p>
+    </main>
+  );
+}
 
-    const listingId = verification.metadata?.listing_id;
-    const supabase = await createClient();
-
-    // Update listing status to sold if applicable
-    if (listingId) {
-      await supabase
-        .from('listings')
-        .update({ status: 'sold' })
-        .eq('id', listingId);
-    }
-
-    return NextResponse.json({
-      success: true,
-      amount: verification.amount,
-      reference: verification.reference,
-    });
-  } catch (error: any) {
-    console.error('Payment verification error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Server error verifying payment.' },
-      { status: 500 }
-    );
-  }
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<p style={{ textAlign: "center", marginTop: 80 }}>Loading...</p>}>
+      <VerifyContent />
+    </Suspense>
+  );
 }

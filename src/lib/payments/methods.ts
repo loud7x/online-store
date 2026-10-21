@@ -1,4 +1,4 @@
-import { getPaystackSecretKey } from './config';
+import { getPaystackSecretKey } from "./config";
 
 export type PaymentMethodId =
   | "card"
@@ -60,11 +60,21 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
   },
 ];
 
+/**
+ * Returns the Paystack channels for a payment method.
+ * Falls back to card if the method is unknown or has no channels set.
+ */
+export function paystackChannelsFor(method: PaymentMethodId): string[] {
+  const found = PAYMENT_METHODS.find((m) => m.id === method);
+  return found?.paystackChannels ?? ["card"];
+}
+
 export interface InitializePaymentParams {
   email: string;
   amount: number; // in NGN
   reference: string;
   callbackUrl: string;
+  channels?: string[];
   metadata?: Record<string, any>;
 }
 
@@ -73,6 +83,7 @@ export async function initializePaystackPayment({
   amount,
   reference,
   callbackUrl,
+  channels,
   metadata,
 }: InitializePaymentParams) {
   const secretKey = getPaystackSecretKey();
@@ -91,6 +102,7 @@ export async function initializePaystackPayment({
       amount: Math.round(amount * 100), // convert NGN to kobo
       reference,
       callback_url: callbackUrl,
+      channels,
       metadata,
     }),
   });
@@ -109,12 +121,15 @@ export async function verifyPaystackPayment(reference: string) {
     throw new Error("Paystack secret key is missing from environment variables.");
   }
 
-  const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${secretKey}`,
-    },
-  });
+  const response = await fetch(
+    `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+      },
+    }
+  );
 
   const data = await response.json();
   if (!data.status) {
