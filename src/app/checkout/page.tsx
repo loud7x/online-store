@@ -1,317 +1,150 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
-import { coinPackages, formatNaira, formatNumber } from "@/data/mock";
-import { generateOrderRef } from "@/data/orders";
-import {
-  PAYMENT_METHODS,
-  type PaymentMethodId,
-} from "@/lib/payments/methods";
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { createBrowserClient } from '@/lib/supabase/client';
 
-const PLATFORMS = ["PlayStation", "Xbox", "PC", "Android", "iOS"];
-
-function CheckoutForm() {
+export default function CheckoutPage() {
   const searchParams = useSearchParams();
-  const packageId = searchParams.get("package") || "coin-02";
-  const pkg = coinPackages.find((p) => p.id === packageId) || coinPackages[1];
+  const listingId = searchParams.get('listing');
+  const router = useRouter();
+  const supabase = createBrowserClient();
 
-  const [platform, setPlatform] = useState("PlayStation");
-  const [email, setEmail] = useState("");
-  const [note, setNote] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("opay");
-  const [accepted, setAccepted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [done, setDone] = useState<{
-    reference: string;
-    method: string;
-  } | null>(null);
+  const [listing, setListing] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    if (!accepted) {
-      setError("Please accept the terms to continue.");
+  useEffect(() => {
+    if (!listingId) {
+      router.push('/accounts');
       return;
     }
-    setLoading(true);
 
-    const reference = generateOrderRef();
-    const methodName =
-      PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.name || paymentMethod;
+    async function fetchListing() {
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', listingId)
+        .single();
 
-    // Try live payment provider if configured
-    try {
-      const res = await fetch("/api/payments/initialize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          amount: pkg.price,
-          reference,
-          packageId: pkg.id,
-          platform,
-          payment_method: paymentMethod,
-          callback_url:
-            typeof window !== "undefined"
-              ? `${window.location.origin}/orders?ref=${reference}`
-              : undefined,
-        }),
-      });
-      const data = await res.json();
-
-      if (data.success && data.authorization_url) {
-        // Redirect to Paystack / Flutterwave checkout
-        window.location.href = data.authorization_url;
-        return;
+      if (error || !data) {
+        setError('Listing not found or no longer active.');
+      } else {
+        setListing(data);
       }
-
-      // Provider not configured or demo — complete local demo order
-      if (data.demo || res.status === 503) {
-        await new Promise((r) => setTimeout(r, 600));
-        setDone({ reference, method: methodName });
-        setLoading(false);
-        return;
-      }
-
-      setError(data.error || "Could not start payment. Try another method.");
-      setLoading(false);
-    } catch {
-      // Offline / no server — still allow demo success
-      await new Promise((r) => setTimeout(r, 600));
-      setDone({ reference, method: methodName });
       setLoading(false);
     }
+
+    fetchListing();
+  }, [listingId, router, supabase]);
+
+  const handlePaystackPayment = async () => {
+    setPaying(true);
+    setError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      // Call backend API route to initialize Paystack transaction
+      const response = await fetch('/api/checkout/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId: listing.id,
+          amount: listing.price,
+          email: user.email,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to initialize payment');
+      }
+
+      // Redirect user to Paystack checkout URL
+      if (result.authorization_url) {
+        window.location.href = result.authorization_url;
+      } else {
+        throw new Error('Invalid payment gateway response');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during checkout');
+      setPaying(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-20 text-gray-400">Preparing checkout...</div>;
   }
 
-  if (done) {
+  if (error || !listing) {
     return (
-      <div className="max-w-md mx-auto text-center">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8">
-          <div className="text-3xl text-[var(--success)] mb-3">✓</div>
-          <h1 className="text-xl font-semibold text-white">Order placed</h1>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Pay with <strong className="text-white">{done.method}</strong> using your order
-            reference. When live keys are set, you are redirected to the payment provider.
-          </p>
-          <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3">
-            <p className="text-xs text-[var(--muted)]">Order reference</p>
-            <p className="font-mono text-sm text-white mt-1">{done.reference}</p>
-          </div>
-          <p className="mt-3 text-sm text-[var(--muted)]">
-            {pkg.name} · {formatNumber(pkg.coins)} coins · {formatNaira(pkg.price)}
-          </p>
-          <div className="mt-6 flex flex-col gap-2">
-            <Link
-              href={`/orders?ref=${done.reference}`}
-              className="btn btn-primary py-2.5 text-sm"
-            >
-              Track order
-            </Link>
-            <Link href="/coins" className="btn btn-secondary py-2.5 text-sm">
-              Back to packages
-            </Link>
-          </div>
-        </div>
-        <p className="mt-4 text-xs text-[var(--muted-foreground)]">
-          Demo mode if Paystack/Flutterwave keys are not set. OPay &amp; PalmPay work through
-          bank transfer / wallet channels once a provider is connected.
-        </p>
+      <div className="max-w-md mx-auto text-center py-20 px-4">
+        <p className="text-red-400 mb-4">{error || 'Something went wrong.'}</p>
+        <button
+          onClick={() => router.push('/accounts')}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Back to Marketplace
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="grid lg:grid-cols-5 gap-8 max-w-4xl mx-auto">
-      <div className="lg:col-span-3">
-        <h1 className="text-2xl font-semibold text-white mb-2">Checkout</h1>
-        <p className="text-sm text-[var(--muted)] mb-8">
-          Pay easily with OPay, PalmPay, bank transfer, USSD, or card.
-        </p>
+    <div className="max-w-xl mx-auto px-4 py-12">
+      <h1 className="text-3xl font-bold text-white mb-2">Secure Checkout</h1>
+      <p className="text-gray-400 mb-8">Complete your payment securely via Paystack.</p>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {error && (
-            <div className="rounded-lg bg-[var(--danger)]/10 border border-[var(--danger)]/30 px-4 py-3 text-sm text-[var(--danger)]">
-              {error}
-            </div>
-          )}
-
-          {/* Payment method */}
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
-            <h2 className="text-sm font-semibold text-white mb-1">Payment method</h2>
-            <p className="text-xs text-[var(--muted-foreground)] mb-4">
-              OPay and PalmPay are recommended for fast local payments in Nigeria.
-            </p>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {PAYMENT_METHODS.map((method) => {
-                const selected = paymentMethod === method.id;
-                return (
-                  <button
-                    key={method.id}
-                    type="button"
-                    onClick={() => setPaymentMethod(method.id)}
-                    className={`text-left rounded-lg border px-3 py-3 transition-colors ${
-                      selected
-                        ? "border-[var(--primary)] bg-[var(--primary)]/10"
-                        : "border-[var(--border)] bg-[var(--background)] hover:border-[#3f3f46]"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-white">{method.name}</span>
-                      {method.recommended && (
-                        <span className="badge bg-[var(--primary)] text-white text-[10px]">
-                          Easy
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-[var(--muted)] mt-0.5">{method.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-white">Order details</h2>
-
-            <div>
-              <label className="block text-sm font-medium text-[var(--muted)] mb-1.5">
-                Platform
-              </label>
-              <select
-                required
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-white focus:border-[var(--primary)] focus:outline-none"
-              >
-                {PLATFORMS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[var(--muted)] mb-1.5">
-                Email (order updates)
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-white placeholder:text-[var(--muted-foreground)] focus:border-[var(--primary)] focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[var(--muted)] mb-1.5">
-                Notes (optional)
-              </label>
-              <textarea
-                rows={2}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Do not include passwords or OTP codes"
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-white placeholder:text-[var(--muted-foreground)] focus:border-[var(--primary)] focus:outline-none resize-none"
-              />
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-[var(--warning)]/30 bg-[var(--warning)]/5 px-4 py-3 text-sm text-[var(--warning)]">
-            We never ask for Konami passwords or one-time codes here. OPay/PalmPay payments
-            go through the secure payment provider — LOUDEFOOT does not store your wallet PIN.
-          </div>
-
-          <label className="flex items-start gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={accepted}
-              onChange={(e) => setAccepted(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-[var(--border)]"
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-6">
+        <div className="flex gap-4 items-center pb-6 border-b border-gray-800">
+          {listing.image_url && (
+            <img
+              src={listing.image_url}
+              alt={listing.title}
+              className="w-24 h-24 object-cover rounded-lg border border-gray-700"
             />
-            <span className="text-xs text-[var(--muted)] leading-relaxed">
-              I accept the{" "}
-              <Link href="/terms" className="text-[var(--primary)] hover:underline">
-                Terms
-              </Link>{" "}
-              and{" "}
-              <Link href="/refunds" className="text-[var(--primary)] hover:underline">
-                Refund Policy
-              </Link>
-              .
-            </span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={loading || !pkg.available}
-            className="btn btn-primary w-full py-3 text-sm disabled:opacity-60"
-          >
-            {loading
-              ? "Processing..."
-              : `Pay ${formatNaira(pkg.price)} with ${
-                  PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.name || "selected method"
-                }`}
-          </button>
-
-          <p className="text-xs text-[var(--muted-foreground)] text-center">
-            Powered by Paystack / Flutterwave when configured · ₦ NGN
-          </p>
-        </form>
-      </div>
-
-      <div className="lg:col-span-2">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sticky top-24">
-          <h2 className="text-sm font-semibold text-white mb-4">Order summary</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-[var(--muted)]">Package</span>
-              <span className="text-white">{pkg.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--muted)]">Coins</span>
-              <span className="text-white">{formatNumber(pkg.coins)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--muted)]">Pay with</span>
-              <span className="text-white">
-                {PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.name}
-              </span>
-            </div>
-            <div className="border-t border-[var(--border)] pt-3 flex justify-between">
-              <span className="font-medium text-white">Total</span>
-              <span className="font-semibold text-white text-lg">
-                {formatNaira(pkg.price)}
-              </span>
-            </div>
+          )}
+          <div>
+            <h2 className="font-semibold text-lg text-white">{listing.title}</h2>
+            <p className="text-sm text-gray-400 mt-1">
+              Rating: {listing.squad_rating || 'N/A'} • Coins: {listing.coins || 0}
+            </p>
           </div>
-          <Link
-            href="/coins"
-            className="block text-center text-xs text-[var(--primary)] mt-4 hover:underline"
-          >
-            Change package
-          </Link>
         </div>
-      </div>
-    </div>
-  );
-}
 
-export default function CheckoutPage() {
-  return (
-    <div className="container-main section-padding">
-      <Suspense
-        fallback={
-          <div className="text-center text-[var(--muted)] py-12">Loading checkout...</div>
-        }
-      >
-        <CheckoutForm />
-      </Suspense>
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between text-gray-300">
+            <span>Account Price</span>
+            <span>₦{listing.price.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between text-gray-300">
+            <span>Escrow & Protection Fee</span>
+            <span className="text-green-400">FREE</span>
+          </div>
+          <div className="flex justify-between text-lg font-bold text-white pt-3 border-t border-gray-800">
+            <span>Total Amount</span>
+            <span className="text-green-400">₦{listing.price.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <button
+          onClick={handlePaystackPayment}
+          disabled={paying}
+          className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {paying ? 'Redirecting to Paystack...' : `Pay ₦${listing.price.toLocaleString()} with Paystack`}
+        </button>
+
+        <p className="text-xs text-center text-gray-500">
+          🔒 Payments are securely processed via Paystack. Account details are released to you upon verification.
+        </p>
+      </div>
     </div>
   );
 }
