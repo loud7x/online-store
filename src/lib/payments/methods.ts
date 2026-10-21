@@ -1,8 +1,4 @@
-/**
- * Nigerian-friendly payment methods for LOUDEFOOT.
- * Card, bank transfer, USSD, OPay, and PalmPay are offered in the UI.
- * Live charging still runs through Paystack or Flutterwave when configured.
- */
+import { getPaystackSecretKey } from './config';
 
 export type PaymentMethodId =
   | "card"
@@ -26,49 +22,104 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
   {
     id: "opay",
     name: "OPay",
-    description: "Pay with OPay wallet or transfer",
-    paystackChannels: ["bank_transfer", "bank", "ussd"],
+    description: "Pay quickly with OPay wallet or bank transfer",
+    paystackChannels: ["bank_transfer", "card"],
     recommended: true,
   },
   {
     id: "palmpay",
     name: "PalmPay",
-    description: "Pay with PalmPay wallet or transfer",
-    paystackChannels: ["bank_transfer", "bank", "ussd"],
+    description: "Pay with PalmPay app or virtual transfer",
+    paystackChannels: ["bank_transfer", "card"],
     recommended: true,
   },
   {
     id: "bank_transfer",
-    name: "Bank transfer",
-    description: "Transfer from any Nigerian bank",
-    paystackChannels: ["bank_transfer", "bank"],
-  },
-  {
-    id: "ussd",
-    name: "USSD",
-    description: "Pay with bank USSD code (*737#, etc.)",
-    paystackChannels: ["ussd"],
+    name: "Bank Transfer",
+    description: "Direct bank transfer (Instant confirmation via automated account)",
+    paystackChannels: ["bank_transfer"],
+    recommended: true,
   },
   {
     id: "card",
-    name: "Card",
-    description: "Debit / credit card (Visa, Mastercard, Verve)",
+    name: "Debit / Credit Card",
+    description: "Pay securely with Visa, Mastercard, or Verve",
     paystackChannels: ["card"],
   },
   {
+    id: "ussd",
+    name: "USSD Code",
+    description: "Pay via short USSD code for supported Nigerian banks",
+    paystackChannels: ["ussd"],
+  },
+  {
     id: "mobile_money",
-    name: "Other mobile money",
-    description: "Other supported mobile wallets",
-    paystackChannels: ["mobile_money", "bank_transfer"],
+    name: "Mobile Money",
+    description: "Pay using supported mobile wallets",
+    paystackChannels: ["mobile_money"],
   },
 ];
 
-export function getMethodById(id: string): PaymentMethod | undefined {
-  return PAYMENT_METHODS.find((m) => m.id === id);
+export interface InitializePaymentParams {
+  email: string;
+  amount: number; // in NGN
+  reference: string;
+  callbackUrl: string;
+  metadata?: Record<string, any>;
 }
 
-/** Channels to request from Paystack based on selected method */
-export function paystackChannelsFor(methodId: PaymentMethodId): string[] {
-  const method = getMethodById(methodId);
-  return method?.paystackChannels || ["card", "bank", "ussd", "bank_transfer"];
+export async function initializePaystackPayment({
+  email,
+  amount,
+  reference,
+  callbackUrl,
+  metadata,
+}: InitializePaymentParams) {
+  const secretKey = getPaystackSecretKey();
+  if (!secretKey) {
+    throw new Error("Paystack secret key is missing from environment variables.");
+  }
+
+  const response = await fetch("https://api.paystack.co/transaction/initialize", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      amount: Math.round(amount * 100), // convert NGN to kobo
+      reference,
+      callback_url: callbackUrl,
+      metadata,
+    }),
+  });
+
+  const data = await response.json();
+  if (!data.status) {
+    throw new Error(data.message || "Failed to initialize Paystack payment");
+  }
+
+  return data.data; // contains authorization_url, access_code, reference
+}
+
+export async function verifyPaystackPayment(reference: string) {
+  const secretKey = getPaystackSecretKey();
+  if (!secretKey) {
+    throw new Error("Paystack secret key is missing from environment variables.");
+  }
+
+  const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+    },
+  });
+
+  const data = await response.json();
+  if (!data.status) {
+    throw new Error(data.message || "Paystack transaction verification failed");
+  }
+
+  return data.data;
 }
