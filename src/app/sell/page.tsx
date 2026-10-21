@@ -74,10 +74,11 @@ export default function SellPage() {
     if (
       !title.trim() ||
       !price ||
+      !whatsappNumber.trim() ||
       !accountDetails.trim() ||
       !accountStatus.trim()
     ) {
-      setMessage("Please complete all required fields, including account status.");
+      setMessage("Please complete all required fields, including WhatsApp number and account status.");
       return;
     }
 
@@ -147,11 +148,14 @@ export default function SellPage() {
         game: "eFootball",
         title: title.trim(),
         price: Number(price),
-        account_image_url: uploadedImagePath,
+        // images is an array of storage paths; the picture goes first
+        images: [uploadedImagePath],
         account_video_url: uploadedVideoPath,
         account_status: accountStatus.trim(),
         status_notes: statusNotes.trim() || null,
         account_details: accountDetails.trim(),
+        whatsapp_number: whatsappNumber.trim(),
+        listing_status: "active",
       });
 
       if (insertError) {
@@ -227,23 +231,22 @@ export default function SellPage() {
           </div>
 
           <div>
-  <label className="mb-2 block text-sm font-medium text-white">
-    WhatsApp Number
-  </label>
-  <input
-    type="tel"
-    value={whatsappNumber}
-    onChange={(event) => setWhatsappNumber(event.target.value)}
-    placeholder="e.g. 2348012345678"
-    maxLength={20}
-    required
-    className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white"
-  />
-  <p className="mt-1 text-xs text-[var(--muted)]">
-    Include your country code, without the + sign.
-  </p>
-</div>
-
+            <label className="mb-2 block text-sm font-medium text-white">
+              WhatsApp Number
+            </label>
+            <input
+              type="tel"
+              value={whatsappNumber}
+              onChange={(event) => setWhatsappNumber(event.target.value)}
+              placeholder="e.g. 2348012345678"
+              maxLength={20}
+              required
+              className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white"
+            />
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              Include your country code, without the + sign.
+            </p>
+          </div>
 
           <div>
             <label className="mb-2 block text-sm font-medium text-white">
@@ -365,7 +368,7 @@ export default function SellPage() {
               className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white placeholder:text-[var(--muted)]"
             />
             <p className="mt-1 text-xs text-[var(--muted)]">
-              Enter the account's exact linking/login status so buyers know what they are getting.
+              Enter the account&apos;s exact linking/login status so buyers know what they are getting.
             </p>
           </div>
 

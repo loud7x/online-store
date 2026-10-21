@@ -9,7 +9,7 @@ type Listing = {
   user_id: string;
   title: string;
   price: number;
-  account_image_url: string;
+  images: string[] | null;
   account_video_url: string | null;
   account_status: string;
   status_notes: string | null;
@@ -44,7 +44,7 @@ export default function AccountsPage() {
     setUserId(authData.user?.id ?? null);
     const { data, error: queryError } = await supabase
       .from("listings")
-      .select("id, user_id, title, price, account_image_url, account_video_url, account_status, status_notes, account_details, whatsapp_number, listing_status, created_at")
+      .select("id, user_id, title, price, images, account_video_url, account_status, status_notes, account_details, whatsapp_number, listing_status, created_at")
       .order("created_at", { ascending: false });
     if (queryError) {
       setError(queryError.message);
@@ -53,13 +53,21 @@ export default function AccountsPage() {
       return;
     }
     const withMedia = await Promise.all((data ?? []).map(async (listing) => {
-      const { data: imageData } = await supabase.storage.from("account-media").createSignedUrl(listing.account_image_url, 3600);
+      // images is an array of storage paths; the first one is the account picture
+      const imagePath = listing.images?.[0] ?? null;
+      let imageUrl: string | null = null;
+      if (imagePath) {
+        const { data: imageData } = await supabase.storage.from("account-media").createSignedUrl(imagePath, 3600);
+        imageUrl = imageData?.signedUrl ?? null;
+      }
+
       let videoUrl: string | null = null;
       if (listing.account_video_url) {
         const { data: videoData } = await supabase.storage.from("account-media").createSignedUrl(listing.account_video_url, 3600);
         videoUrl = videoData?.signedUrl ?? null;
       }
-      return { ...listing, listing_status: listing.listing_status ?? "active", imageUrl: imageData?.signedUrl ?? null, videoUrl } as DisplayListing;
+
+      return { ...listing, listing_status: listing.listing_status ?? "active", imageUrl, videoUrl } as DisplayListing;
     }));
     setListings(withMedia);
     setLoading(false);
