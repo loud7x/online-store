@@ -1,51 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyPayment } from "@/lib/payments/verify";
+import { NextResponse } from 'next/server';
+import { verifyPayment } from '@/lib/payments/paystack';
+import { createClient } from '@/lib/supabase/server';
 
-/**
- * POST /api/payments/verify
- * Body: { reference: string, provider?: "paystack" | "flutterwave" }
- * Always verify on the server. Never trust a client-only success callback.
- */
-export async function POST(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const body = await request.json();
-    const reference = body?.reference as string | undefined;
-    const provider = body?.provider as string | undefined;
+    const { searchParams } = new URL(request.url);
+    const reference = searchParams.get('reference');
 
-    if (!reference || typeof reference !== "string") {
+    if (!reference) {
       return NextResponse.json(
-        { success: false, error: "Missing payment reference" },
+        { error: 'Missing transaction reference.' },
         { status: 400 }
       );
     }
 
-    const result = await verifyPayment(reference, provider);
+    // Verify transaction status with Paystack API
+    const verification = await verifyPayment(reference);
 
-    if (!result.success) {
+    if (verification.status !== 'success') {
       return NextResponse.json(
-        {
-          success: false,
-          error: result.error || "Payment not verified",
-          provider: result.provider,
-        },
-        { status: 402 }
+        { error: 'Transaction was not successful.' },
+        { status: 400 }
       );
     }
 
-    // TODO when Supabase connected:
-    // Find order by reference, match amount, set payment_confirmed, prevent duplicates
+    const listingId = verification.metadata?.listing_id;
+    const supabase = await createClient();
+
+    // Update listing status to sold if applicable
+    if (listingId) {
+      await supabase
+        .from('listings')
+        .update({ status: 'sold' })
+        .eq('id', listingId);
+    }
 
     return NextResponse.json({
       success: true,
-      reference: result.reference,
-      amount: result.amount,
-      currency: result.currency,
-      provider: result.provider,
-      message: "Payment verified. Wire order status update when DB is connected.",
+      amount: verification.amount,
+      reference: verification.reference,
     });
-  } catch {
+  } catch (error: any) {
+    console.error('Payment verification error:', error);
     return NextResponse.json(
-      { success: false, error: "Verification request failed" },
+      { error: error.message || 'Server error verifying payment.' },
       { status: 500 }
     );
   }

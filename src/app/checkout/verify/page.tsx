@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyPayment } from '@/lib/payments/paystack';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
   try {
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     }
 
     const listingId = verification.metadata?.listing_id;
-    const supabase = createServerClient();
+    const supabase = await createClient();
 
     // Update listing status to sold if applicable
     if (listingId) {
