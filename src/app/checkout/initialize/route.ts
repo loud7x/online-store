@@ -8,13 +8,13 @@ export async function POST(request: Request) {
 
     if (!listingId || !amount || !email) {
       return NextResponse.json(
-        { error: 'Missing required parameters (listingId, amount, email).' },
+        { error: 'Missing required parameters.' },
         { status: 400 }
       );
     }
 
-    // Initialize payment with Paystack helper
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/checkout/verify`;
+
     const paystackData = await initializePayment({
       email,
       amountInNgn: amount,
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       reference: paystackData.reference,
     });
   } catch (error: any) {
-    console.error('Paystack initialization error:', error);
+    console.error('Payment initialization error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to initialize transaction.' },
       { status: 500 }
