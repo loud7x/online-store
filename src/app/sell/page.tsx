@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 export default function SellPage() {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("")
   const [accountDetails, setAccountDetails] = useState("");
   const [accountStatus, setAccountStatus] = useState("");
   const [statusNotes, setStatusNotes] = useState("");
@@ -151,6 +152,7 @@ export default function SellPage() {
         account_status: accountStatus.trim(),
         status_notes: statusNotes.trim() || null,
         account_details: accountDetails.trim(),
+        whatsapp_number: whatsappNumber.trim(),
       });
 
       if (insertError) {
@@ -223,6 +225,24 @@ export default function SellPage() {
               required
               className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white"
             />
+          </div>
+          
+          <div>
+            <label className="mb-2 block text-sm font medium text-white">
+              Whatsapp Number
+            </label>
+            <input
+              type="tel"
+              value={whatsappNumber}
+              onChange={(event)} => setWhatsappNumber(event.target.value)}
+              placeholder="e.g. 2348012345678"
+              maxLength={20}
+              required
+              className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white"
+            />
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              Include your country code, without the + sign.
+            </p>
           </div>
 
           <div>
