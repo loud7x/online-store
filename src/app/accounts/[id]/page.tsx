@@ -1,336 +1,286 @@
+"use client";
 
-'use client';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { startOrGetConversation } from '@/lib/chat';
+type Seller = {
+  id: string;
+  username: string | null;
+  is_verified: boolean | null;
+  rating: number | null;
+};
 
-export default function AccountDetailPage() {
-  const router = useRouter();
+type SellerListing = {
+  id: string;
+  title: string;
+  price: number;
+  status: string | null;
+  images: string[] | null;
+  created_at: string;
+  imageUrl?: string | null;
+};
+
+export default function SellerProfilePage() {
   const params = useParams();
   const id = params.id as string;
   const supabase = createClient();
 
-  const [listing, setListing] = useState<any>(null);
-  const [seller, setSeller] = useState<any>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [seller, setSeller] = useState<Seller | null>(null);
+  const [listings, setListings] = useState<SellerListing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function fetchListing() {
-      setLoading(true);
+    async function resolveImage(listing: SellerListing) {
+      const first = Array.isArray(listing.images) ? listing.images[0] : null;
 
-      try {
-        const { data, error } = await supabase
-          .from('listings')
-          .select('*')
-          .eq('id', id)
-          .maybeSingle();
+      if (typeof first !== "string" || !first.trim()) return null;
 
-        if (error) {
-          console.error('Listing fetch error:', error.message);
-          if (!cancelled) setListing(null);
-          return;
-        }
+      const value = first.trim();
 
-        if (!data) {
-          if (!cancelled) setListing(null);
-          return;
-        }
-
-        if (cancelled) return;
-        setListing(data);
-
-        // Load seller information separately.
-        if (data.seller_id) {
-          const { data: sellerData, error: sellerError } =
-            await supabase
-              .from('users')
-              .select('id, username, is_verified, rating')
-              .eq('id', data.seller_id)
-              .maybeSingle();
-
-          if (sellerError) {
-            console.error('Seller fetch error:', sellerError.message);
-          }
-
-          if (!cancelled) setSeller(sellerData);
-        }
-
-        // Support image URLs and images stored in Supabase Storage.
-        const storedImage =
-          (Array.isArray(data.images) ? data.images[0] : null) ||
-          data.account_image_url ||
-          data.image_url ||
-          null;
-
-        if (typeof storedImage === 'string' && storedImage.trim()) {
-          const value = storedImage.trim();
-          let resolvedUrl: string | null = value;
-
-          if (
-            !value.startsWith('https://') &&
-            !value.startsWith('http://')
-          ) {
-            const path = value
-              .replace(/^\/+/, '')
-              .replace(/^account-media\//, '');
-
-            const { data: signedData, error: imageError } =
-              await supabase.storage
-                .from('account-media')
-                .createSignedUrl(path, 3600);
-
-            if (imageError) {
-              console.error('Listing image error:', imageError.message);
-              resolvedUrl = null;
-            } else {
-              resolvedUrl = signedData?.signedUrl ?? null;
-            }
-          }
-
-          if (!cancelled) setImageUrl(resolvedUrl);
-        }
-      } catch (error) {
-        console.error('Unexpected listing error:', error);
-        if (!cancelled) setListing(null);
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (value.startsWith("https://") || value.startsWith("http://")) {
+        return value;
       }
+
+      const path = value.replace(/^\/+/, "").replace(/^account-media\//, "");
+
+      const { data, error } = await supabase.storage
+        .from("account-media")
+        .createSignedUrl(path, 3600);
+
+      if (error || !data?.signedUrl) return null;
+
+      return data.signedUrl;
     }
 
-    if (id) fetchListing();
+    async function load() {
+      setLoading(true);
+
+      const { data: sellerData, error: sellerError } = await supabase
+        .from("users")
+        .select("id, username, is_verified, rating")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (sellerError || !sellerData) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      setSeller(sellerData as Seller);
+
+      const { data: authData } = await supabase.auth.getUser();
+      if (!cancelled) setIsOwner(authData.user?.id === id);
+
+      const { data: listingData } = await supabase
+        .from("listings")
+        .select("id, title, price, status, images, created_at")
+        .eq("seller_id", id)
+        .order("created_at", { ascending: false });
+
+      const rows = (listingData ?? []) as SellerListing[];
+
+      const withImages = await Promise.all(
+        rows.map(async (listing) =>
+          listing.status === "active"
+            ? { ...listing, imageUrl: await resolveImage(listing) }
+            : listing
+        )
+      );
+
+      if (cancelled) return;
+
+      setListings(withImages);
+      setLoading(false);
+    }
+
+    if (id) void load();
 
     return () => {
       cancelled = true;
     };
   }, [id]);
 
-  const handleChatSeller = async () => {
-    if (!listing) return;
-
-    setActionLoading(true);
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      if (user.id === listing.seller_id) {
-        alert('This is your own listing!');
-        return;
-      }
-
-      const conversationId = await startOrGetConversation(
-        user.id,
-        listing.seller_id,
-        listing.id
-      );
-
-      router.push(`/messages?conversation=${conversationId}`);
-    } catch (error: any) {
-      alert(error.message || 'Error starting chat');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const getWhatsAppLink = () => {
-    if (!listing?.whatsapp_number) return null;
-
-    const number = String(listing.whatsapp_number).replace(/\D/g, '');
-    if (!number) return null;
-
-    const message = encodeURIComponent(
-      `Hello! I am interested in your eFootball listing: "${listing.title}" (₦${Number(listing.price).toLocaleString()}). Is it still available?`
-    );
-
-    return `https://wa.me/${number}?text=${message}`;
-  };
-
   if (loading) {
     return (
-      <div className="text-center py-20 text-gray-400">
-        Loading details...
-      </div>
+      <main className="min-h-screen bg-[var(--background)] px-4 py-10">
+        <p className="text-center text-[var(--muted)]">Loading profile…</p>
+      </main>
     );
   }
 
-  if (!listing) {
+  if (notFound || !seller) {
     return (
-      <div className="text-center py-20 text-red-400">
-        Listing not found. Please check the listing link or try again.
-        <div>
-          <button
-            onClick={() => router.push('/accounts')}
-            className="mt-4 rounded-lg bg-blue-600 px-5 py-2 text-white"
+      <main className="min-h-screen bg-[var(--background)] px-4 py-10">
+        <div className="mx-auto max-w-md text-center">
+          <p className="text-red-400">Seller not found.</p>
+          <Link
+            href="/accounts"
+            className="btn btn-primary mt-5 inline-flex px-5 py-2.5 text-sm"
           >
             Browse Accounts
-          </button>
+          </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
-  const whatsappLink = getWhatsAppLink();
-  const sold = listing.status === 'sold';
+  const name = seller.username || "Seller";
+  const soldCount = listings.filter((l) => l.status === "sold").length;
+  const activeListings = listings.filter((l) => l.status === "active");
+  const soldListings = listings.filter((l) => l.status === "sold");
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 space-y-6">
-          <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-800">
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={listing.title || 'eFootball account'}
-                className="w-full h-auto object-cover max-h-[480px]"
-              />
-            ) : (
-              <div className="h-64 flex items-center justify-center text-gray-500">
-                No Screenshot Uploaded
-              </div>
-            )}
-          </div>
+    <main className="min-h-screen bg-[var(--background)]">
+      <div className="container-main py-10">
+        {/* Profile header */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-xl font-bold text-white">
+              {name.slice(0, 2).toUpperCase()}
+            </div>
 
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h1 className="text-2xl font-bold text-white">
-                {listing.title}
+            <div className="min-w-0">
+              <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-white">
+                <span className="break-all">{name}</span>
+                {seller.is_verified && (
+                  <span className="rounded-full bg-[var(--primary)]/15 px-3 py-1 text-xs font-semibold text-[var(--primary)]">
+                    ✓ Verified
+                  </span>
+                )}
               </h1>
 
-              {sold && (
-                <span className="rounded-full bg-red-900 px-3 py-1 text-sm font-semibold text-red-200">
-                  SOLD
-                </span>
+              {(seller.rating ?? 0) > 0 && (
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  ★ {seller.rating} rating
+                </p>
               )}
             </div>
+          </div>
 
-            <p className="text-gray-300 whitespace-pre-line">
-              {listing.description || 'No description provided.'}
-            </p>
+          {/* Trust stats */}
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-[var(--border)] p-4 text-center">
+              <div className="text-2xl font-bold text-green-400">
+                {soldCount}
+              </div>
+              <div className="mt-1 text-xs text-[var(--muted)]">
+                Accounts Sold
+              </div>
+            </div>
 
-            {listing.featured_players?.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-gray-400 mb-2">
-                  Featured Players
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {listing.featured_players.map(
-                    (player: string, index: number) => (
-                      <span
-                        key={index}
-                        className="bg-gray-800 text-blue-400 text-xs px-3 py-1.5 rounded-full border border-gray-700"
-                      >
-                        {player}
-                      </span>
-                    )
+            <div className="rounded-xl border border-[var(--border)] p-4 text-center">
+              <div className="text-2xl font-bold text-white">
+                {activeListings.length}
+              </div>
+              <div className="mt-1 text-xs text-[var(--muted)]">
+                Active Listings
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] p-4 text-center">
+              <div className="text-2xl font-bold text-white">
+                {listings.length}
+              </div>
+              <div className="mt-1 text-xs text-[var(--muted)]">
+                Total Posted
+              </div>
+            </div>
+          </div>
+
+          {isOwner && (
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/my-listings"
+                className="btn btn-primary px-5 py-2.5 text-sm"
+              >
+                Manage My Listings
+              </Link>
+              <Link
+                href="/sell"
+                className="btn btn-secondary px-5 py-2.5 text-sm"
+              >
+                + Sell an Account
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Active listings */}
+        <h2 className="mb-4 mt-10 text-xl font-semibold text-white">
+          Active Listings
+        </h2>
+
+        {activeListings.length === 0 ? (
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted)]">
+            No active listings right now.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {activeListings.map((listing) => (
+              <Link
+                key={listing.id}
+                href={`/accounts/${listing.id}`}
+                className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]"
+              >
+                <div className="relative aspect-[16/10] bg-gradient-to-br from-[#1a1a2e] to-[#0f0f1a]">
+                  {listing.imageUrl ? (
+                    <img
+                      src={listing.imageUrl}
+                      alt={listing.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-[var(--muted)]">
+                      No screenshot
+                    </div>
                   )}
                 </div>
-              </div>
-            )}
+                <div className="p-4">
+                  <h3 className="line-clamp-2 text-[15px] font-medium text-white group-hover:text-[var(--primary)]">
+                    {listing.title}
+                  </h3>
+                  <p className="mt-1.5 text-lg font-semibold text-white">
+                    ₦{Number(listing.price || 0).toLocaleString()}
+                  </p>
+                </div>
+              </Link>
+            ))}
           </div>
-        </div>
+        )}
 
-        <div className="space-y-6">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-6">
-            <div>
-              <span className="text-sm text-gray-400">Asking Price</span>
-              <div className="text-3xl font-bold text-green-400">
-                ₦{Number(listing.price || 0).toLocaleString()}
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-4 border-t border-gray-800 text-sm">
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-400">Team Strength:</span>
-                <span className="text-white font-medium">
-                  {listing.team_strength || listing.squad_rating || 'N/A'}
-                </span>
-              </div>
-
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-400">OVR:</span>
-                <span className="text-white font-medium">
-                  {listing.ovr || listing.overall_rating || 'N/A'}
-                </span>
-              </div>
-
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-400">Platform:</span>
-                <span className="text-white font-medium">
-                  {listing.platform || 'N/A'}
-                </span>
-              </div>
-
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-400">eFootball Coins:</span>
-                <span className="text-yellow-400 font-medium">
-                  🪙 {Number(listing.coins || 0).toLocaleString()}
-                </span>
-              </div>
-
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-400">Seller:</span>
-                <span className="text-white font-medium">
-                  {seller?.username || 'Seller'}
-                  {seller?.is_verified ? ' ✓' : ''}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-4">
-              {sold ? (
-                <button
-                  disabled
-                  className="w-full py-3 bg-gray-700 text-gray-300 font-semibold rounded-lg cursor-not-allowed"
+        {/* Sold history */}
+        {soldListings.length > 0 && (
+          <>
+            <h2 className="mb-4 mt-10 text-xl font-semibold text-white">
+              Sold History
+            </h2>
+            <div className="space-y-3">
+              {soldListings.map((listing) => (
+                <div
+                  key={listing.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"
                 >
-                  Account Sold
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() =>
-                      router.push(`/checkout?listing=${listing.id}`)
-                    }
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-                  >
-                    Buy Now
-                  </button>
-
-                  {whatsappLink && (
-                    <a
-                      href={whatsappLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                      Chat on WhatsApp
-                    </a>
-                  )}
-
-                  <button
-                    onClick={handleChatSeller}
-                    disabled={actionLoading}
-                    className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors border border-gray-700 disabled:opacity-50"
-                  >
-                    {actionLoading ? 'Connecting...' : 'In-App Chat'}
-                  </button>
-                </>
-              )}
+                  <span className="min-w-0 truncate text-sm text-white">
+                    {listing.title}
+                  </span>
+                  <span className="shrink-0 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-400">
+                    SOLD
+                  </span>
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
-    </div>
+    </main>
   );
 }
