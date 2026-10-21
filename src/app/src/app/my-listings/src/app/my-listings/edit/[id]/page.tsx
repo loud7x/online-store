@@ -3,259 +3,287 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function EditListingPage() {
-  const params = useParams();
-  const router = useRouter();
+type Listing = {
+  id: string;
+  title: string;
+  price: number;
+  status: string | null;
+  listing_status: string | null;
+  created_at: string;
+  images: string[] | null;
+};
+
+export default function MyListingsPage() {
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+
   const supabase = createClient();
 
-  const id = params.id as string;
+  async function loadListings() {
+    setLoading(true);
+    setMessage("");
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+    const { data: authData, error: authError } =
+      await supabase.auth.getUser();
 
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
-  const [whatsappNumber, setWhatsappNumber] = useState("");
-  const [accountDetails, setAccountDetails] = useState("");
-  const [accountStatus, setAccountStatus] = useState("");
-  const [statusNotes, setStatusNotes] = useState("");
-
-  useEffect(() => {
-    async function loadListing() {
-      const { data: authData } = await supabase.auth.getUser();
-
-      if (!authData.user) {
-        setMessage("Please log in to edit your listing.");
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("listings")
-        .select(
-          "id, user_id, title, price, whatsapp_number, account_details, account_status, status_notes"
-        )
-        .eq("id", id)
-        .eq("user_id", authData.user.id)
-        .maybeSingle();
-
-      if (error || !data) {
-        setMessage(
-          "Listing not found, or you do not have permission to edit it."
-        );
-        setLoading(false);
-        return;
-      }
-
-      setTitle(data.title ?? "");
-      setPrice(String(data.price ?? ""));
-      setWhatsappNumber(data.whatsapp_number ?? "");
-      setAccountDetails(data.account_details ?? "");
-      setAccountStatus(data.account_status ?? "");
-      setStatusNotes(data.status_notes ?? "");
+    if (authError || !authData.user) {
+      setMessage("Please log in to view your listings.");
       setLoading(false);
+      return;
     }
 
-    void loadListing();
-  }, [id]);
+    const { data, error } = await supabase
+      .from("listings")
+      .select(
+        "id, title, price, status, listing_status, created_at, images"
+      )
+      .eq("user_id", authData.user.id)
+      .order("created_at", { ascending: false });
 
-  async function handleSave(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
+    if (error) {
+      setMessage("Could not load listings: " + error.message);
+      setLoading(false);
+      return;
+    }
+
+    setListings((data ?? []) as Listing[]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    void loadListings();
+  }, []);
+
+  async function markAsSold(listing: Listing) {
+    const confirmed = window.confirm(
+      `Mark "${listing.title}" as sold?`
+    );
+
+    if (!confirmed) return;
+
+    setBusyId(listing.id);
     setMessage("");
 
     const { data: authData } = await supabase.auth.getUser();
 
     if (!authData.user) {
-      setMessage("Your session has expired. Please log in again.");
-      setSaving(false);
-      return;
-    }
-
-    if (!title.trim() || !price.trim() || Number(price) <= 0) {
-      setMessage("Enter a title and a valid price.");
-      setSaving(false);
+      setMessage("Please log in again.");
+      setBusyId(null);
       return;
     }
 
     const { data, error } = await supabase
       .from("listings")
       .update({
-        title: title.trim(),
-        price: Number(price),
-        whatsapp_number: whatsappNumber.trim(),
-        account_details: accountDetails.trim(),
-        account_status: accountStatus.trim(),
-        status_notes: statusNotes.trim() || null,
+        status: "sold",
+        listing_status: "sold",
       })
-      .eq("id", id)
+      .eq("id", listing.id)
       .eq("user_id", authData.user.id)
       .select("id");
 
     if (error) {
-      setMessage("Could not save changes: " + error.message);
-      setSaving(false);
-      return;
-    }
-
-    if (!data || data.length === 0) {
+      setMessage("Could not mark as sold: " + error.message);
+    } else if (!data || data.length === 0) {
       setMessage(
-        "No changes were saved. Check your listing permissions."
+        "No listing was updated. Check your listing permissions."
       );
-      setSaving(false);
-      return;
+    } else {
+      setMessage("Listing marked as sold.");
+      await loadListings();
     }
 
-    router.push("/my-listings");
-    router.refresh();
+    setBusyId(null);
   }
 
-  if (loading) {
-    return (
-      <main className="container-main py-12 text-white">
-        Loading listing...
-      </main>
+  async function deleteListing(listing: Listing) {
+    const confirmed = window.confirm(
+      `Permanently delete "${listing.title}"? This cannot be undone.`
     );
+
+    if (!confirmed) return;
+
+    setBusyId(listing.id);
+    setMessage("");
+
+    const { data: authData } = await supabase.auth.getUser();
+
+    if (!authData.user) {
+      setMessage("Please log in again.");
+      setBusyId(null);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("listings")
+      .delete()
+      .eq("id", listing.id)
+      .eq("user_id", authData.user.id)
+      .select("id");
+
+    if (error) {
+      setMessage("Could not delete listing: " + error.message);
+    } else if (!data || data.length === 0) {
+      setMessage(
+        "No listing was deleted. Check your listing permissions."
+      );
+    } else {
+      setMessage("Listing deleted successfully.");
+      await loadListings();
+    }
+
+    setBusyId(null);
   }
 
   return (
     <main className="min-h-screen bg-[var(--background)]">
-      <div className="container-main max-w-2xl py-10">
-        <Link
-          href="/my-listings"
-          className="text-sm text-[var(--primary)] hover:underline"
-        >
-          ← Back to My Listings
-        </Link>
+      <div className="container-main py-10">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white">
+              My Listings
+            </h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Manage your eFootball accounts on LOUDEFOOT.
+            </p>
+          </div>
 
-        <h1 className="mt-5 text-3xl font-bold text-white">
-          Edit Listing
-        </h1>
-
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          Correct your account information and save your changes.
-        </p>
+          <Link
+            href="/sell"
+            className="btn btn-primary px-5 py-3 text-sm"
+          >
+            + Sell an Account
+          </Link>
+        </div>
 
         {message && (
           <div
             role="status"
-            className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-sm text-white"
+            className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-sm text-white"
           >
             {message}
           </div>
         )}
 
-        <form
-          onSubmit={handleSave}
-          className="mt-8 space-y-5 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7"
-        >
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white">
-              Listing Title
-            </label>
-            <input
-              required
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-white"
-              placeholder="e.g. 3200 coins account"
-            />
+        {loading ? (
+          <p className="py-10 text-center text-[var(--muted)]">
+            Loading your listings...
+          </p>
+        ) : listings.length === 0 ? (
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
+            <h2 className="text-xl font-semibold text-white">
+              No listings found
+            </h2>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Accounts you post will appear here.
+            </p>
+            <Link
+              href="/sell"
+              className="btn btn-primary mt-5 inline-flex px-5 py-3 text-sm"
+            >
+              Post Your First Account
+            </Link>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {listings.map((listing) => {
+              const currentStatus =
+                listing.status ||
+                listing.listing_status ||
+                "unknown";
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white">
-              Price (₦)
-            </label>
-            <input
-              required
-              type="number"
-              min="1"
-              step="any"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-white"
-              placeholder="Enter price"
-            />
+              const sold = currentStatus === "sold";
+
+              return (
+                <article
+                  key={listing.id}
+                  className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]"
+                >
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">
+                          {listing.title}
+                        </h2>
+                        <p className="mt-2 text-xl font-bold text-[var(--primary)]">
+                          ₦
+                          {Number(
+                            listing.price || 0
+                          ).toLocaleString()}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          sold
+                            ? "bg-red-500/15 text-red-400"
+                            : currentStatus === "active"
+                            ? "bg-green-500/15 text-green-400"
+                            : "bg-white/10 text-white"
+                        }`}
+                      >
+                        {currentStatus.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <p className="mt-3 text-xs text-[var(--muted)]">
+                      Posted{" "}
+                      {listing.created_at
+                        ? new Date(
+                            listing.created_at
+                          ).toLocaleDateString()
+                        : "date unavailable"}
+                    </p>
+
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <Link
+                        href={`/accounts/${listing.id}`}
+                        className="btn btn-secondary px-4 py-2 text-sm"
+                      >
+                        View
+                      </Link>
+
+                      <Link
+                        href={`/my-listings/edit/${listing.id}`}
+                        className="btn btn-secondary px-4 py-2 text-sm"
+                      >
+                        Edit
+                      </Link>
+
+                      {!sold && (
+                        <button
+                          type="button"
+                          disabled={busyId === listing.id}
+                          onClick={() => void markAsSold(listing)}
+                          className="btn btn-primary px-4 py-2 text-sm disabled:opacity-50"
+                        >
+                          {busyId === listing.id
+                            ? "Please wait..."
+                            : "Mark as Sold"}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        disabled={busyId === listing.id}
+                        onClick={() => void deleteListing(listing)}
+                        className="rounded-lg border border-red-500/40 px-4 py-2 text-sm text-red-400 disabled:opacity-50"
+                      >
+                        {busyId === listing.id
+                          ? "Please wait..."
+                          : "Delete"}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white">
-              WhatsApp Number
-            </label>
-            <input
-              type="tel"
-              value={whatsappNumber}
-              onChange={(event) =>
-                setWhatsappNumber(event.target.value)
-              }
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-white"
-              placeholder="e.g. 2348012345678"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white">
-              Account Status
-            </label>
-            <input
-              required
-              value={accountStatus}
-              onChange={(event) =>
-                setAccountStatus(event.target.value)
-              }
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-white"
-              placeholder="e.g. Double link, Link safe"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white">
-              Status Notes
-            </label>
-            <textarea
-              rows={3}
-              value={statusNotes}
-              onChange={(event) => setStatusNotes(event.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-white"
-              placeholder="Extra information about the account status"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white">
-              Account Details
-            </label>
-            <textarea
-              required
-              rows={5}
-              value={accountDetails}
-              onChange={(event) =>
-                setAccountDetails(event.target.value)
-              }
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-white"
-              placeholder="Describe the account, players, team strength, and other details"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="btn btn-primary w-full px-5 py-3 text-sm disabled:opacity-50"
-          >
-            {saving ? "Saving Changes..." : "Save Changes"}
-          </button>
-
-          <Link
-            href="/my-listings"
-            className="block text-center text-sm text-[var(--muted)] hover:underline"
-          >
-            Cancel
-          </Link>
-        </form>
+        )}
       </div>
     </main>
   );
