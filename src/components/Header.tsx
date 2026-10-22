@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -10,7 +11,6 @@ const navLinks = [
   { href: "/accounts", label: "Browse Accounts" },
   { href: "/sell", label: "Sell" },
   { href: "/exchange", label: "Exchange Hub" },
-  { href: "/coins", label: "Coin Loading" },
 ];
 
 export default function Header() {
