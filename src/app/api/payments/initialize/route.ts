@@ -19,10 +19,9 @@ export async function POST(request: Request) {
     const { method, listingId } = body;
 
     // Coin orders (no listingId) still need a payment method.
-    // Account purchases don't: Paystack shows all options.
     if (!listingId && !method) {
       return NextResponse.json(
-        { error: "v2 check 1" },
+        { error: "Missing required fields." },
         { status: 400 }
       );
     }
@@ -32,13 +31,12 @@ export async function POST(request: Request) {
     const callbackUrl = `${origin}/checkout/verify`;
     const channels = method ? paystackChannelsFor(method) : undefined;
 
-    // Payments with no listing (for example coin orders) keep the old behaviour.
     if (!listingId) {
       const { email, amount } = body;
 
       if (!email || !amount) {
         return NextResponse.json(
-          { error: "v2 check 2" },
+          { error: "Missing required fields." },
           { status: 400 }
         );
       }
@@ -58,8 +56,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // Account purchase: the buyer comes from the login session, and the
-    // price comes from the database. Nothing is trusted from the browser.
     const supabase = await createClient();
     const {
       data: { user },
@@ -76,11 +72,19 @@ export async function POST(request: Request) {
 
     const { data: listing, error: listingError } = await admin
       .from("listings")
-      .select("id, price, status, seller_id")
+      .select("id, price, status, user_id")
       .eq("id", listingId)
       .maybeSingle();
 
-    if (listingError || !listing) {
+    if (listingError) {
+      console.error("Listing lookup failed:", listingError.message);
+      return NextResponse.json(
+        { error: `Listing lookup failed: ${listingError.message}` },
+        { status: 500 }
+      );
+    }
+
+    if (!listing) {
       return NextResponse.json(
         { error: "Listing not found." },
         { status: 404 }
@@ -94,7 +98,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (listing.seller_id === user.id) {
+    if (listing.user_id === user.id) {
       return NextResponse.json(
         { error: "You cannot buy your own listing." },
         { status: 400 }
@@ -114,7 +118,7 @@ export async function POST(request: Request) {
       reference,
       listing_id: String(listing.id),
       buyer_id: user.id,
-      seller_id: listing.seller_id,
+      seller_id: listing.user_id,
       amount,
       status: "pending",
     });
@@ -122,7 +126,7 @@ export async function POST(request: Request) {
     if (orderError) {
       console.error("Could not create order:", orderError.message);
       return NextResponse.json(
-        { error: "Could not start your order. Please try again." },
+        { error: `Could not start your order: ${orderError.message}` },
         { status: 500 }
       );
     }
