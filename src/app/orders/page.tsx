@@ -25,16 +25,20 @@ function OrdersContent() {
     if (ref.trim()) query = query.ilike("reference", `%${ref.trim()}%`);
     const { data } = await query;
     setOrders(
-      (data || []).map((o: any) => ({
-        id: o.id,
-        reference: o.reference,
-        packageName: o.package_name,
-        coins: o.coins,
-        platform: o.platform,
-        amount: o.amount,
-        status: o.status,
-        createdAt: o.created_at,
-      }))
+      (data || []).map(
+        (o: any) =>
+          ({
+            id: o.id,
+            reference: o.reference,
+            packageName: o.package_name,
+            coins: o.coins,
+            platform: o.platform,
+            amount: o.amount,
+            status: o.status,
+            createdAt: o.created_at,
+            updatedAt: o.updated_at ?? o.created_at,
+          }) as CoinOrder
+      )
     );
     setLoading(false);
   }
