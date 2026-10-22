@@ -1,35 +1,80 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   initializePaystackPayment,
   paystackChannelsFor,
   type PaymentMethodId,
 } from "@/lib/payments/methods";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export async function POST(request: Request) {
   try {
-    const { email, method, listingId } = (await request.json()) as {
-      email: string;
-      method: PaymentMethodId;
-      listingId: string;
+    const body = (await request.json()) as {
+      email?: string;
+      amount?: number;
+      method?: PaymentMethodId;
+      listingId?: string;
     };
 
-    if (!email || !method || !listingId) {
+    const { method, listingId } = body;
+
+    if (!method) {
       return NextResponse.json(
         { error: "Missing required fields." },
         { status: 400 }
       );
     }
 
-    // Read the real price from the database. Never trust the browser.
-    const { data: listing, error: listingError } = await supabase
+    const reference = `LF-${crypto.randomUUID()}`;
+    const origin = new URL(request.url).origin;
+    const callbackUrl = `${origin}/checkout/verify`;
+    const channels = paystackChannelsFor(method);
+
+    // Payments with no listing (for example coin orders) keep the old behaviour.
+    if (!listingId) {
+      const { email, amount } = body;
+
+      if (!email || !amount) {
+        return NextResponse.json(
+          { error: "Missing required fields." },
+          { status: 400 }
+        );
+      }
+
+      const data = await initializePaystackPayment({
+        email,
+        amount,
+        reference,
+        callbackUrl,
+        channels,
+        metadata: {},
+      });
+
+      return NextResponse.json({
+        authorization_url: data.authorization_url,
+        reference: data.reference,
+      });
+    }
+
+    // Account purchase: the buyer comes from the login session, and the
+    // price comes from the database. Nothing is trusted from the browser.
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || !user.email) {
+      return NextResponse.json(
+        { error: "Please log in to continue." },
+        { status: 401 }
+      );
+    }
+
+    const admin = createAdminClient();
+
+    const { data: listing, error: listingError } = await admin
       .from("listings")
-      .select("id, price, status")
+      .select("id, price, status, seller_id")
       .eq("id", listingId)
       .maybeSingle();
 
@@ -47,6 +92,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (listing.seller_id === user.id) {
+      return NextResponse.json(
+        { error: "You cannot buy your own listing." },
+        { status: 400 }
+      );
+    }
+
     const amount = Number(listing.price);
 
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -56,23 +108,44 @@ export async function POST(request: Request) {
       );
     }
 
-    const reference = `LF-${crypto.randomUUID()}`;
-    const origin = new URL(request.url).origin;
-
-    // initializePaystackPayment converts NGN to kobo internally
-    const data = await initializePaystackPayment({
-      email,
-      amount,
+    const { error: orderError } = await admin.from("escrow_orders").insert({
       reference,
-      callbackUrl: `${origin}/checkout/verify`,
-      channels: paystackChannelsFor(method),
-      metadata: { listing_id: listing.id },
+      listing_id: String(listing.id),
+      buyer_id: user.id,
+      seller_id: listing.seller_id,
+      amount,
+      status: "pending",
     });
 
-    return NextResponse.json({
-      authorization_url: data.authorization_url,
-      reference: data.reference,
-    });
+    if (orderError) {
+      console.error("Could not create order:", orderError.message);
+      return NextResponse.json(
+        { error: "Could not start your order. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    try {
+      const data = await initializePaystackPayment({
+        email: user.email,
+        amount,
+        reference,
+        callbackUrl,
+        channels,
+        metadata: { listing_id: String(listing.id) },
+      });
+
+      return NextResponse.json({
+        authorization_url: data.authorization_url,
+        reference: data.reference,
+      });
+    } catch (paystackError) {
+      await admin
+        .from("escrow_orders")
+        .update({ status: "failed" })
+        .eq("reference", reference);
+      throw paystackError;
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error.";
     console.error("Payment initialize error:", error);
