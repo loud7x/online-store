@@ -1,5 +1,17 @@
 import Link from "next/link";
 
+// ---- Fill these in. Leave a value empty ("") to hide it. ----
+const SUPPORT_WHATSAPP = ""; // digits only, e.g. "2348012345678"
+const SUPPORT_EMAIL = ""; // e.g. "support@yourdomain.com"
+
+const socialLinks = [
+  { label: "Instagram", href: "" },
+  { label: "X", href: "" },
+  { label: "TikTok", href: "" },
+  { label: "Facebook", href: "" },
+].filter((item) => item.href);
+// ---------------------------------------------------------------
+
 const footerLinks = {
   marketplace: [
     { href: "/accounts", label: "Browse Accounts" },
@@ -21,6 +33,8 @@ const footerLinks = {
 };
 
 export default function Footer() {
+  const whatsappDigits = SUPPORT_WHATSAPP.replace(/\D/g, "");
+
   return (
     <footer className="border-t border-[var(--border)] bg-[var(--card)] mt-auto">
       <div className="container-main section-padding">
@@ -41,6 +55,45 @@ export default function Footer() {
             <p className="mt-4 text-xs text-[var(--muted-foreground)]">
               Independent platform. Not affiliated with Konami or eFootball.
             </p>
+
+            {(whatsappDigits || SUPPORT_EMAIL) && (
+              <div className="mt-5 space-y-2 text-sm">
+                {whatsappDigits && (
+                  <a
+                    href={`https://wa.me/${whatsappDigits}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-[var(--muted)] hover:text-white transition-colors"
+                  >
+                    WhatsApp Support
+                  </a>
+                )}
+                {SUPPORT_EMAIL && (
+                  <a
+                    href={`mailto:${SUPPORT_EMAIL}`}
+                    className="block break-all text-[var(--muted)] hover:text-white transition-colors"
+                  >
+                    {SUPPORT_EMAIL}
+                  </a>
+                )}
+              </div>
+            )}
+
+            {socialLinks.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                {socialLinks.map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--muted)] hover:text-white transition-colors"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Marketplace */}
