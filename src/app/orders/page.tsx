@@ -7,13 +7,14 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { STATUS_LABELS, STATUS_COLORS, type CoinOrder } from "@/data/orders";
 import { formatNaira, formatNumber } from "@/data/mock";
-import { supabase } from "@/lib/supabase"; // adjust path if different
+import { createClient } from "@/lib/supabase/client";
 
 function OrdersContent() {
   const searchParams = useSearchParams();
   const [lookup, setLookup] = useState(searchParams.get("ref") || "");
   const [orders, setOrders] = useState<CoinOrder[]>([]);
   const [loading, setLoading] = useState(true);
+
 
   async function load(ref: string) {
     setLoading(true);
