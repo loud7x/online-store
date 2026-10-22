@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  demoOrders,
   STATUS_LABELS,
   STATUS_COLORS,
   type OrderStatus,
+  type CoinOrder,
 } from "@/data/orders";
 import { formatNaira, formatNumber } from "@/data/mock";
+import { supabase } from "@/lib/supabase"; // same path as the orders page
 import type { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
 
 const PIPELINE: OrderStatus[] = [
   "pending_payment",
@@ -16,13 +19,33 @@ const PIPELINE: OrderStatus[] = [
   "completed",
 ];
 
+async function getOrder(id: string): Promise<CoinOrder | null> {
+  const { data } = await supabase
+    .from("coin_orders") // match your table name
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    id: data.id,
+    reference: data.reference,
+    packageName: data.package_name,
+    coins: data.coins,
+    platform: data.platform,
+    amount: data.amount,
+    status: data.status,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at ?? data.created_at,
+  } as CoinOrder;
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const order = demoOrders.find((o) => o.id === id);
+  const order = await getOrder(id);
   return { title: order ? `Order ${order.reference}` : "Order" };
 }
 
@@ -32,7 +55,7 @@ export default async function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const order = demoOrders.find((o) => o.id === id);
+  const order = await getOrder(id);
   if (!order) notFound();
 
   const statusIndex = PIPELINE.indexOf(
@@ -61,7 +84,6 @@ export default async function OrderDetailPage({
           </p>
         </div>
 
-        {/* Pipeline */}
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
           <div className="flex justify-between gap-1">
             {PIPELINE.map((step, i) => {
@@ -141,3 +163,4 @@ export default async function OrderDetailPage({
     </div>
   );
 }
+
