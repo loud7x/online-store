@@ -1,22 +1,57 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import {
   initializePaystackPayment,
   paystackChannelsFor,
   type PaymentMethodId,
 } from "@/lib/payments/methods";
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 export async function POST(request: Request) {
   try {
-    const { email, amount, method, listingId } = (await request.json()) as {
+    const { email, method, listingId } = (await request.json()) as {
       email: string;
-      amount: number; // in Naira, e.g. 5000 = ₦5,000
       method: PaymentMethodId;
-      listingId?: string;
+      listingId: string;
     };
 
-    if (!email || !amount || !method) {
+    if (!email || !method || !listingId) {
       return NextResponse.json(
         { error: "Missing required fields." },
+        { status: 400 }
+      );
+    }
+
+    // Read the real price from the database. Never trust the browser.
+    const { data: listing, error: listingError } = await supabase
+      .from("listings")
+      .select("id, price, status")
+      .eq("id", listingId)
+      .maybeSingle();
+
+    if (listingError || !listing) {
+      return NextResponse.json(
+        { error: "Listing not found." },
+        { status: 404 }
+      );
+    }
+
+    if (listing.status !== "active") {
+      return NextResponse.json(
+        { error: "This listing is no longer available." },
+        { status: 400 }
+      );
+    }
+
+    const amount = Number(listing.price);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json(
+        { error: "This listing has an invalid price." },
         { status: 400 }
       );
     }
@@ -31,7 +66,7 @@ export async function POST(request: Request) {
       reference,
       callbackUrl: `${origin}/checkout/verify`,
       channels: paystackChannelsFor(method),
-      metadata: { listing_id: listingId },
+      metadata: { listing_id: listing.id },
     });
 
     return NextResponse.json({
