@@ -78,7 +78,6 @@ export default function AccountDetailPage() {
         setUserId(authData.user?.id ?? null);
       }
 
-      // First, find the account using the listing ID in the URL.
       const { data: listingData, error: listingError } = await supabase
         .from("listings")
         .select(
@@ -104,7 +103,6 @@ export default function AccountDetailPage() {
       const account = listingData as Listing;
       setListing(account);
 
-      // Find the seller using the account owner's user_id.
       const { data: sellerData } = await supabase
         .from("users")
         .select("id, username, is_verified, rating")
@@ -113,7 +111,6 @@ export default function AccountDetailPage() {
 
       if (cancelled) return;
 
-      // The account remains visible even if the seller profile is missing.
       setSeller((sellerData as Seller | null) ?? null);
 
       const firstImage = account.images?.[0] ?? null;
@@ -164,7 +161,10 @@ export default function AccountDetailPage() {
       const response = await fetch("/api/payments/initialize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listingId: listing.id }),
+        body: JSON.stringify({
+          listingId: listing.id,
+          method: "card",
+        }),
       });
 
       const result = await response.json();
