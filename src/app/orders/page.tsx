@@ -4,35 +4,50 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
-import {
-  demoOrders,
-  STATUS_LABELS,
-  STATUS_COLORS,
-  type CoinOrder,
-} from "@/data/orders";
+import { Suspense, useEffect, useState } from "react";
+import { STATUS_LABELS, STATUS_COLORS, type CoinOrder } from "@/data/orders";
 import { formatNaira, formatNumber } from "@/data/mock";
+import { supabase } from "@/lib/supabase"; // adjust path if different
 
 function OrdersContent() {
   const searchParams = useSearchParams();
-  const refQuery = searchParams.get("ref") || "";
-  const [lookup, setLookup] = useState(refQuery);
+  const [lookup, setLookup] = useState(searchParams.get("ref") || "");
+  const [orders, setOrders] = useState<CoinOrder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    if (!lookup.trim()) return demoOrders;
-    const q = lookup.trim().toLowerCase();
-    return demoOrders.filter(
-      (o) =>
-        o.reference.toLowerCase().includes(q) ||
-        o.id.toLowerCase().includes(q)
+  async function load(ref: string) {
+    setLoading(true);
+    let query = supabase
+      .from("coin_orders") // adjust to your table name
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (ref.trim()) query = query.ilike("reference", `%${ref.trim()}%`);
+    const { data } = await query;
+    setOrders(
+      (data || []).map((o: any) => ({
+        id: o.id,
+        reference: o.reference,
+        packageName: o.package_name,
+        coins: o.coins,
+        platform: o.platform,
+        amount: o.amount,
+        status: o.status,
+        createdAt: o.created_at,
+      }))
     );
-  }, [lookup]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load(lookup);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl sm:text-3xl font-semibold text-white">Order tracking</h1>
       <p className="mt-1 text-sm text-[var(--muted)] mb-8">
-        Look up an order by reference or view recent demo orders.
+        Look up an order by reference.
       </p>
 
       <div className="flex gap-2 mb-8">
@@ -46,15 +61,17 @@ function OrdersContent() {
         <button
           type="button"
           className="btn btn-primary px-5 py-2.5 text-sm"
-          onClick={() => setLookup(lookup.trim())}
+          onClick={() => load(lookup)}
         >
           Find
         </button>
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="text-center text-[var(--muted)]">Loading...</div>
+      ) : orders.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-10 text-center text-[var(--muted)]">
-          No orders found for that reference.
+          No orders found.
           <div className="mt-4">
             <Link href="/coins" className="text-[var(--primary)] hover:underline text-sm">
               Order coins →
@@ -63,15 +80,11 @@ function OrdersContent() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((order) => (
+          {orders.map((order) => (
             <OrderRow key={order.id} order={order} />
           ))}
         </div>
       )}
-
-      <p className="mt-8 text-center text-xs text-[var(--muted-foreground)]">
-        Demo orders shown. Live orders appear after payment verification.
-      </p>
     </div>
   );
 }
