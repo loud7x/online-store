@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Listing = {
@@ -29,7 +30,6 @@ type Seller = {
 
 export default function AccountDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params.id as string;
 
   const [listing, setListing] = useState<Listing | null>(null);
@@ -39,7 +39,7 @@ export default function AccountDetailPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [buying, setBuying] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,11 +58,13 @@ export default function AccountDetailPage() {
         .replace(/^account-media\//, "");
 
       const supabase = createClient();
+
       const { data, error } = await supabase.storage
         .from("account-media")
         .createSignedUrl(cleanPath, 3600);
 
       if (error) return null;
+
       return data?.signedUrl ?? null;
     }
 
@@ -136,58 +138,17 @@ export default function AccountDetailPage() {
     };
   }, [id]);
 
-  async function buyAccount() {
-    if (!listing) return;
-
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
-
-    if (userId === listing.user_id) {
-      setError("You cannot purchase your own account.");
-      return;
-    }
-
-    if (listing.status !== "active") {
-      setError("This account is no longer available.");
-      return;
-    }
-
-    setBuying(true);
-    setError("");
-
+  async function copySellerNumber(number: string) {
     try {
-      const response = await fetch("/api/payments/initialize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          listingId: listing.id,
-          method: "card",
-        }),
-      });
+      await navigator.clipboard.writeText(number);
+      setCopied(true);
+      setError("");
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Could not start payment.");
-      }
-
-      const paymentUrl =
-        result.authorization_url ||
-        result.authorizationUrl ||
-        result.data?.authorization_url;
-
-      if (!paymentUrl) {
-        throw new Error("Payment link was not returned. Please try again.");
-      }
-
-      window.location.href = paymentUrl;
-    } catch (err) {
+      window.setTimeout(() => setCopied(false), 2500);
+    } catch {
       setError(
-        err instanceof Error ? err.message : "Could not start payment."
+        "Could not copy the number automatically. Please select and copy it manually."
       );
-      setBuying(false);
     }
   }
 
@@ -208,6 +169,7 @@ export default function AccountDetailPage() {
           <p className="text-red-400">
             {error || "Account not found."}
           </p>
+
           <Link
             href="/accounts"
             className="btn btn-primary mt-5 inline-flex px-5 py-3"
@@ -224,9 +186,21 @@ export default function AccountDetailPage() {
   const sellerName = seller?.username || "Seller";
 
   const whatsappDigits = (listing.whatsapp_number || "").replace(/\D/g, "");
+
+  const whatsappMessage = `Hi, I'm interested in your eFootball account "${listing.title}" listed on LOUDEFOOT for ${new Intl.NumberFormat(
+    "en-NG",
+    {
+      style: "currency",
+      currency: "NGN",
+      maximumFractionDigits: 0,
+    }
+  ).format(Number(listing.price || 0))}. Is it still available?`;
+
   const whatsappUrl = whatsappDigits
-    ? `https://wa.me/${whatsappDigits}`
+    ? `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(whatsappMessage)}`
     : null;
+
+  const callUrl = whatsappDigits ? `tel:+${whatsappDigits}` : null;
 
   return (
     <main className="container-main section-padding">
@@ -324,7 +298,9 @@ export default function AccountDetailPage() {
 
           {listing.status_notes && (
             <div className="mt-5">
-              <h2 className="font-semibold text-white">Account status notes</h2>
+              <h2 className="font-semibold text-white">
+                Account status notes
+              </h2>
               <p className="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--muted)]">
                 {listing.status_notes}
               </p>
@@ -342,48 +318,54 @@ export default function AccountDetailPage() {
           )}
 
           {isAvailable && !isOwner && (
-            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    userId
-                      ? `/messages?listingId=${encodeURIComponent(listing.id)}`
-                      : "/login"
-                  )
-                }
-                className="btn px-4 py-3"
-              >
-                DM Seller
-              </button>
+            <div className="mt-6 space-y-3">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+                <h2 className="font-semibold text-white">
+                  Contact Seller
+                </h2>
 
-              {whatsappUrl ? (
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn px-4 py-3 text-center"
-                >
-                  WhatsApp Seller
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  className="btn px-4 py-3 opacity-50"
-                >
-                  WhatsApp not added
-                </button>
-              )}
+                {whatsappDigits ? (
+                  <>
+                    <p className="mt-2 text-sm text-[var(--muted)]">
+                      Seller's phone number
+                    </p>
 
-              <button
-                type="button"
-                onClick={() => void buyAccount()}
-                disabled={buying}
-                className="btn btn-primary px-4 py-3 sm:col-span-2 disabled:opacity-50"
-              >
-                {buying ? "Opening secure payment..." : "Buy Account"}
-              </button>
+                    <p className="mt-1 break-all text-lg font-semibold text-white">
+                      +{whatsappDigits}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => void copySellerNumber(whatsappDigits)}
+                      className="btn mt-3 w-full px-4 py-3"
+                    >
+                      {copied ? "Number Copied ✓" : "Copy Phone Number"}
+                    </button>
+
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <a
+                        href={whatsappUrl ?? undefined}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary px-4 py-3 text-center"
+                      >
+                        WhatsApp Seller
+                      </a>
+
+                      <a
+                        href={callUrl ?? undefined}
+                        className="btn px-4 py-3 text-center"
+                      >
+                        Call Seller
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-[var(--muted)]">
+                    The seller has not added a WhatsApp phone number yet.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
