@@ -20,6 +20,7 @@ const PIPELINE: OrderStatus[] = [
 ];
 
 async function getOrder(id: string): Promise<CoinOrder | null> {
+  const supabase = await createClient();
   const { data } = await supabase
     .from("coin_orders") // match your table name
     .select("*")
