@@ -1,5 +1,6 @@
+
 import Link from "next/link";
-import { AccountListing, formatNaira, formatNumber } from "@/data/mock";
+import { AccountListing, formatNaira } from "@/data/mock";
 
 interface AccountCardProps {
   account: AccountListing & {
@@ -15,17 +16,17 @@ export default function AccountCard({ account }: AccountCardProps) {
 
   const sellerInfo = (
     <>
-      <div className="h-6 w-6 shrink-0 rounded-full bg-[var(--accent)] flex items-center justify-center text-[10px] font-medium text-white">
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-medium text-white">
         {sellerName.slice(0, 2).toUpperCase()}
       </div>
 
-      <span className="text-xs text-[var(--muted)] truncate max-w-[100px]">
+      <span className="max-w-[100px] truncate text-xs text-[var(--muted)]">
         {sellerName}
       </span>
 
       {account.seller?.verified && (
         <svg
-          className="h-3.5 w-3.5 text-[var(--primary)] shrink-0"
+          className="h-3.5 w-3.5 shrink-0 text-[var(--primary)]"
           viewBox="0 0 20 20"
           fill="currentColor"
           aria-label="Verified seller"
@@ -41,15 +42,14 @@ export default function AccountCard({ account }: AccountCardProps) {
   );
 
   return (
-    <div className="group relative block rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden card-hover">
-      {/* Whole-card link to the account */}
+    <div className="group relative block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] card-hover">
       <Link
         href={`/accounts/${account.id}`}
         className="absolute inset-0 z-10"
         aria-label={account.title || "View account"}
       />
 
-      <div className="relative aspect-[16/10] bg-gradient-to-br from-[#1a1a2e] to-[#0f0f1a] flex items-center justify-center overflow-hidden">
+      <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0f0f1a]">
         {imageUrl ? (
           <>
             <img
@@ -60,38 +60,39 @@ export default function AccountCard({ account }: AccountCardProps) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10" />
           </>
         ) : (
-          <div className="text-center p-4">
+          <div className="p-4 text-center">
             <div className="text-3xl font-bold text-white/90">
               {account.teamStrength ?? "eFootball"}
             </div>
-            <div className="text-xs text-[var(--muted)] mt-1 uppercase tracking-wider">
+            <div className="mt-1 text-xs uppercase tracking-wider text-[var(--muted)]">
               {account.teamStrength ? "Team Strength" : "Account"}
             </div>
           </div>
         )}
 
         {account.isFeatured && (
-          <span className="absolute top-3 left-3 badge bg-[var(--primary)] text-white">
+          <span className="badge absolute left-3 top-3 bg-[var(--primary)] text-white">
             Featured
           </span>
         )}
 
         {account.isBestValue && (
-          <span className="absolute top-3 right-3 badge bg-[var(--success)] text-white">
+          <span className="badge absolute right-3 top-3 bg-[var(--success)] text-white">
             Best Value
           </span>
         )}
 
-        <span className="absolute bottom-3 left-3 badge bg-black/60 text-white backdrop-blur-sm">
+        <span className="badge absolute bottom-3 left-3 bg-black/60 text-white backdrop-blur-sm">
           {account.platform || "eFootball"}
         </span>
       </div>
 
-      <div className="p-4 space-y-3">
+      <div className="space-y-3 p-4">
         <div>
-          <h3 className="font-medium text-white line-clamp-2 group-hover:text-[var(--primary)] transition-colors text-[15px] leading-snug">
+          <h3 className="line-clamp-2 text-[15px] font-medium leading-snug text-white transition-colors group-hover:text-[var(--primary)]">
             {account.title}
           </h3>
+
           <p className="mt-1.5 text-lg font-semibold text-white">
             {formatNaira(account.price)}
           </p>
@@ -99,13 +100,6 @@ export default function AccountCard({ account }: AccountCardProps) {
 
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
           <span>OVR {account.overallRating ?? 0}</span>
-
-          {(account.coins ?? 0) > 0 && (
-            <>
-              <span>·</span>
-              <span>{formatNumber(account.coins)} coins</span>
-            </>
-          )}
 
           {(account.epicPlayers ?? 0) > 0 && (
             <>
@@ -115,16 +109,16 @@ export default function AccountCard({ account }: AccountCardProps) {
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)]">
+        <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-2">
           {sellerId ? (
             <Link
               href={`/sellers/${sellerId}`}
-              className="relative z-20 flex items-center gap-2 min-w-0 hover:underline"
+              className="relative z-20 flex min-w-0 items-center gap-2 hover:underline"
             >
               {sellerInfo}
             </Link>
           ) : (
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
               {sellerInfo}
             </div>
           )}
