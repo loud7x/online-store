@@ -7,7 +7,7 @@ import {
   type CoinOrder,
 } from "@/data/orders";
 import { formatNaira, formatNumber } from "@/data/mock";
-import { supabase } from "@/lib/supabase"; // same path as the orders page
+import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
