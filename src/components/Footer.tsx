@@ -1,14 +1,11 @@
 import Link from "next/link";
 
 // ---- Fill these in. Leave a value empty ("") to hide it. ----
-const SUPPORT_WHATSAPP = ""; // digits only, e.g. "2348012345678"
-const SUPPORT_EMAIL = ""; // e.g. "support@yourdomain.com"
+const SUPPORT_WHATSAPP = ""; // digits only, e.g. "2349138948073"
+const SUPPORT_EMAIL = ""; // e.g. "loudefoot@gmail.com"
 
 const socialLinks = [
-  { label: "Instagram", href: "" },
-  { label: "X", href: "" },
-  { label: "TikTok", href: "" },
-  { label: "Facebook", href: "" },
+  { label: "Instagram", href: "" }, "https://instagram.com/loud7x_"
 ].filter((item) => item.href);
 // ---------------------------------------------------------------
 
