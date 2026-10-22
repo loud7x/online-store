@@ -1,14 +1,11 @@
 import Link from "next/link";
-
 // ---- Fill these in. Leave a value empty ("") to hide it. ----
 const SUPPORT_WHATSAPP = ""; // digits only, e.g. "2349138948073"
 const SUPPORT_EMAIL = ""; // e.g. "loudefoot@gmail.com"
-
 const socialLinks = [
-  { label: "Instagram", href: "" }, "https://instagram.com/loud7x_"
+  { label: "Instagram", href: "https://instagram.com/loud7x_" },
 ].filter((item) => item.href);
 // ---------------------------------------------------------------
-
 const footerLinks = {
   marketplace: [
     { href: "/accounts", label: "Browse Accounts" },
@@ -28,10 +25,8 @@ const footerLinks = {
     { href: "/refunds", label: "Refund Policy" },
   ],
 };
-
 export default function Footer() {
   const whatsappDigits = SUPPORT_WHATSAPP.replace(/\D/g, "");
-
   return (
     <footer className="border-t border-[var(--border)] bg-[var(--card)] mt-auto">
       <div className="container-main section-padding">
@@ -47,12 +42,12 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-[var(--muted)] leading-relaxed max-w-xs">
-              Premium eFootball account marketplace. Buy, sell, exchange accounts and load coins — all in one place.
+              Premium eFootball account marketplace. Buy, sell, exchange
+              accounts and load coins — all in one place.
             </p>
             <p className="mt-4 text-xs text-[var(--muted-foreground)]">
               Independent platform. Not affiliated with Konami or eFootball.
             </p>
-
             {(whatsappDigits || SUPPORT_EMAIL) && (
               <div className="mt-5 space-y-2 text-sm">
                 {whatsappDigits && (
@@ -75,7 +70,6 @@ export default function Footer() {
                 )}
               </div>
             )}
-
             {socialLinks.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
                 {socialLinks.map((item) => (
@@ -92,10 +86,11 @@ export default function Footer() {
               </div>
             )}
           </div>
-
           {/* Marketplace */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Marketplace</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">
+              Marketplace
+            </h3>
             <ul className="space-y-2.5">
               {footerLinks.marketplace.map((link) => (
                 <li key={link.href}>
@@ -109,10 +104,11 @@ export default function Footer() {
               ))}
             </ul>
           </div>
-
           {/* Support */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Support</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">
+              Support
+            </h3>
             <ul className="space-y-2.5">
               {footerLinks.support.map((link) => (
                 <li key={link.href}>
@@ -126,7 +122,6 @@ export default function Footer() {
               ))}
             </ul>
           </div>
-
           {/* Legal */}
           <div>
             <h3 className="text-sm font-semibold text-white mb-4">Legal</h3>
@@ -144,7 +139,6 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-
         <div className="mt-12 pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[var(--muted-foreground)]">
             © LOUDEFOOT. All rights reserved.
