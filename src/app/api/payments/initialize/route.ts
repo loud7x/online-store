@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     // Account purchases don't: Paystack shows all options.
     if (!listingId && !method) {
       return NextResponse.json(
-        { error: "Missing required fields." },
+        { error: "v2 check 1" },
         { status: 400 }
       );
     }
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
       if (!email || !amount) {
         return NextResponse.json(
-          { error: "Missing required fields." },
+          { error: "v2 check 2" },
           { status: 400 }
         );
       }
