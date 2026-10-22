@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
@@ -20,17 +19,20 @@ export default function MyListingsPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
 
   const supabase = createClient();
 
-  async function loadListings() {
+  const loadListings = useCallback(async () => {
     setLoading(true);
     setMessage("");
+    setIsUnauthorized(false);
 
     const { data: authData, error: authError } =
       await supabase.auth.getUser();
 
     if (authError || !authData.user) {
+      setIsUnauthorized(true);
       setMessage("Please log in to view your listings.");
       setLoading(false);
       return;
@@ -38,9 +40,7 @@ export default function MyListingsPage() {
 
     const { data, error } = await supabase
       .from("listings")
-      .select(
-        "id, title, price, status, listing_status, created_at, images"
-      )
+      .select("id, title, price, status, listing_status, created_at, images")
       .eq("user_id", authData.user.id)
       .order("created_at", { ascending: false });
 
@@ -52,17 +52,14 @@ export default function MyListingsPage() {
 
     setListings((data ?? []) as Listing[]);
     setLoading(false);
-  }
+  }, [supabase]);
 
   useEffect(() => {
     void loadListings();
-  }, []);
+  }, [loadListings]);
 
   async function markAsSold(listing: Listing) {
-    const confirmed = window.confirm(
-      `Mark "${listing.title}" as sold?`
-    );
-
+    const confirmed = window.confirm(`Mark "${listing.title}" as sold?`);
     if (!confirmed) return;
 
     setBusyId(listing.id);
@@ -89,9 +86,7 @@ export default function MyListingsPage() {
     if (error) {
       setMessage("Could not mark as sold: " + error.message);
     } else if (!data || data.length === 0) {
-      setMessage(
-        "No listing was updated. Check your listing permissions."
-      );
+      setMessage("No listing was updated. Check your listing permissions.");
     } else {
       setMessage("Listing marked as sold.");
       await loadListings();
@@ -104,7 +99,6 @@ export default function MyListingsPage() {
     const confirmed = window.confirm(
       `Permanently delete "${listing.title}"? This cannot be undone.`
     );
-
     if (!confirmed) return;
 
     setBusyId(listing.id);
@@ -128,9 +122,7 @@ export default function MyListingsPage() {
     if (error) {
       setMessage("Could not delete listing: " + error.message);
     } else if (!data || data.length === 0) {
-      setMessage(
-        "No listing was deleted. Check your listing permissions."
-      );
+      setMessage("No listing was deleted. Check your listing permissions.");
     } else {
       setMessage("Listing deleted successfully.");
       await loadListings();
@@ -144,18 +136,13 @@ export default function MyListingsPage() {
       <div className="container-main py-10">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white">
-              My Listings
-            </h1>
+            <h1 className="text-3xl font-bold text-white">My Listings</h1>
             <p className="mt-2 text-sm text-[var(--muted)]">
               Manage your eFootball accounts on LOUDEFOOT.
             </p>
           </div>
 
-          <Link
-            href="/sell"
-            className="btn btn-primary px-5 py-3 text-sm"
-          >
+          <Link href="/sell" className="btn btn-primary px-5 py-3 text-sm">
             + Sell an Account
           </Link>
         </div>
@@ -173,6 +160,21 @@ export default function MyListingsPage() {
           <p className="py-10 text-center text-[var(--muted)]">
             Loading your listings...
           </p>
+        ) : isUnauthorized ? (
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
+            <h2 className="text-xl font-semibold text-white">
+              Authentication Required
+            </h2>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              You must be logged in to manage your listings.
+            </p>
+            <Link
+              href="/login"
+              className="btn btn-primary mt-5 inline-flex px-5 py-3 text-sm"
+            >
+              Log In Now
+            </Link>
+          </div>
         ) : listings.length === 0 ? (
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
             <h2 className="text-xl font-semibold text-white">
@@ -227,9 +229,7 @@ export default function MyListingsPage() {
                     <p className="mt-3 text-xs text-[var(--muted)]">
                       Posted{" "}
                       {listing.created_at
-                        ? new Date(
-                            listing.created_at
-                          ).toLocaleDateString()
+                        ? new Date(listing.created_at).toLocaleDateString()
                         : "date unavailable"}
                     </p>
 
