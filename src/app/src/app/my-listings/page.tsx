@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -239,6 +240,13 @@ export default function MyListingsPage() {
                         className="btn btn-secondary px-4 py-2 text-sm"
                       >
                         View
+                      </Link>
+
+                      <Link
+                        href={`/my-listing/edit/${listing.id}`}
+                        className="btn btn-secondary px-4 py-2 text-sm"
+                      >
+                        Edit
                       </Link>
 
                       {!sold && (
