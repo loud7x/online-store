@@ -18,7 +18,9 @@ export async function POST(request: Request) {
 
     const { method, listingId } = body;
 
-    if (!method) {
+    // Coin orders (no listingId) still need a payment method.
+    // Account purchases don't: Paystack shows all options.
+    if (!listingId && !method) {
       return NextResponse.json(
         { error: "Missing required fields." },
         { status: 400 }
@@ -28,7 +30,7 @@ export async function POST(request: Request) {
     const reference = `LF-${crypto.randomUUID()}`;
     const origin = new URL(request.url).origin;
     const callbackUrl = `${origin}/checkout/verify`;
-    const channels = paystackChannelsFor(method);
+    const channels = method ? paystackChannelsFor(method) : undefined;
 
     // Payments with no listing (for example coin orders) keep the old behaviour.
     if (!listingId) {
