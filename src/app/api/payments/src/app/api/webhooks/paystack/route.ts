@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    // Verify that the webhook really came from Paystack.
+    // Verify that the webhook came from Paystack.
     const signature = request.headers.get("x-paystack-signature");
     const rawBody = await request.text();
     if (!signature || !/^[a-f0-9]{128}$/i.test(signature)) {
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    // We only process successful charges.
+    // Ignore events that do not represent successful charges.
     if (event.event !== "charge.success") {
       return NextResponse.json({ received: true });
     }
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    // Verify the transaction independently with Paystack.
+    // Confirm the payment directly with Paystack.
     const payment = await verifyPaystackPayment(reference);
     if (
       payment.status !== "success" ||
@@ -77,12 +77,12 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    // This webhook handles account purchases only.
-    // Coin purchases and the ordinary orders table are intentionally skipped.
+    // This webhook currently handles account purchases only.
+    // Other payment flows are intentionally left untouched.
     const admin = createAdminClient();
     const { data: order, error: lookupError } = await admin
       .from("escrow_orders")
-      .select("id, reference, listing_id, amount, status, paid_at")
+      .select("id, reference, listing_id, amount, status")
       .eq("reference", reference)
       .maybeSingle();
     if (lookupError) {
@@ -92,8 +92,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    // A valid Paystack event may belong to a different payment flow.
-    // Acknowledge it without changing any other order table.
+    // This may be a valid payment for another flow.
+    // Acknowledge it without changing any order.
     if (!order) {
       console.warn("No escrow order found for reference:", reference);
       return NextResponse.json({
@@ -101,6 +101,8 @@ export async function POST(request: NextRequest) {
         ignored: true,
       });
     }
+    // Confirm that the Paystack amount matches the order.
+    // Supabase stores the amount in naira; Paystack reports kobo.
     const expectedAmount = Math.round(Number(order.amount) * 100);
     if (
       !Number.isSafeInteger(expectedAmount) ||
@@ -109,46 +111,23 @@ export async function POST(request: NextRequest) {
       event.data?.amount !== payment.amount ||
       event.data?.currency !== payment.currency
     ) {
-      console.error("Payment amount mismatch for reference:", reference);
-      // Do not mark the order paid or reserve the listing.
+      console.error("Payment amount mismatch:", reference);
       return NextResponse.json(
         { error: "Payment amount does not match the order." },
         { status: 400 }
       );
     }
-    // The verification route reserves the listing and marks the order
-    // paid_held. Never overwrite later escrow states from a webhook.
-    if (order.status !== "pending") {
-      return NextResponse.json({
-        received: true,
-        alreadyProcessed: true,
-        status: order.status,
-      });
-    }
-    // Only record that payment was received and held.
-    // The buyer's verification route remains responsible for reserving
-    // the listing and moving the order to paid_held.
-    const { data: updated, error: updateError } = await admin
-      .from("escrow_orders")
-      .update({
-        status: "paid_held",
-        paid_at: new Date().toISOString(),
-      })
-      .eq("id", order.id)
-      .eq("status", "pending")
-      .select("id");
-    if (updateError) {
-      console.error("Escrow order update failed:", updateError.message);
-      return NextResponse.json(
-        { error: "Could not update account order." },
-        { status: 500 }
-      );
-    }
-    if (!updated || updated.length === 0) {
-      // Another request may have changed the order concurrently.
-      return NextResponse.json({ received: true });
-    }
-    return NextResponse.json({ received: true });
+    // IMPORTANT:
+    // Do not update escrow_orders or listings here.
+    // The checkout verification route handles reserving the listing
+    // and changing a pending order to paid_held.
+    // This prevents the webhook from marking an order held before
+    // its listing has been reserved.
+    return NextResponse.json({
+      received: true,
+      verified: true,
+      reference,
+    });
   } catch (error) {
     console.error("Paystack webhook error:", error);
     return NextResponse.json(
