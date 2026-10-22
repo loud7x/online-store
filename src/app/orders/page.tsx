@@ -15,8 +15,8 @@ function OrdersContent() {
   const [orders, setOrders] = useState<CoinOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
-
   async function load(ref: string) {
+    const supabase = createClient();
     setLoading(true);
     let query = supabase
       .from("coin_orders") // adjust to your table name
