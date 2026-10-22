@@ -243,7 +243,7 @@ export default function MyListingsPage() {
                       </Link>
 
                       <Link
-                        href={`/my-listing/edit/${listing.id}`}
+                        href={`/my-listings/edit/${listing.id}`}
                         className="btn btn-secondary px-4 py-2 text-sm"
                       >
                         Edit
