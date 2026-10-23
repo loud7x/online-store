@@ -40,12 +40,11 @@ export default function AccountDetailPage() {
   const params = useParams();
   const id = params?.id as string | undefined;
 
-  const [listing, setListing] = useState
-(null);
-  const [seller, setSeller] = useState(null);
-  const [imageUrl, setImageUrl] = useState(null);
-  const [videoUrl, setVideoUrl] = useState(null);
-  const [userId, setUserId] = useState(null);
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [seller, setSeller] = useState<Seller | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -166,25 +165,24 @@ export default function AccountDetailPage() {
 
   if (loading) {
     return (
-      
-        
-          Loading account...
-        
-      
+      <main className="mx-auto max-w-5xl px-4 py-10">
+        <p className="text-center text-sm text-gray-400">Loading account...</p>
+      </main>
     );
   }
 
   if (!listing) {
     return (
-      
-        
-          
-{error || "Account not found."}
-          
+      <main className="mx-auto max-w-5xl px-4 py-10">
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center">
+          <p className="mb-4 text-sm text-red-400">
+            {error || "Account not found."}
+          </p>
+          <Link href="/accounts" className="btn btn-ghost px-5 py-2 text-sm">
             Browse Accounts
-          
-        
-      
+          </Link>
+        </div>
+      </main>
     );
   }
 
@@ -209,145 +207,152 @@ export default function AccountDetailPage() {
   const callUrl = whatsappDigits ? `tel:+${whatsappDigits}` : null;
 
   return (
-    
-      
+    <main className="mx-auto max-w-5xl px-4 py-8">
+      <Link
+        href="/accounts"
+        className="mb-6 inline-block text-sm text-gray-400 hover:text-white"
+      >
         ← Back to accounts
-      
+      </Link>
 
       {error && (
-        
+        <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {error}
-        
+        </div>
       )}
 
-      
+      <div className="grid gap-8 md:grid-cols-2">
         {/* Left Column - Media */}
-        
-          
+        <div className="space-y-4">
+          <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black/20">
             {imageUrl ? (
-              
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl}
+                alt={listing.title}
+                className="aspect-video w-full object-cover"
+              />
             ) : (
-              
+              <div className="flex aspect-video w-full items-center justify-center text-sm text-gray-500">
                 Account picture unavailable
-              
+              </div>
             )}
 
             {/* Status Badges */}
             {isSold && (
-              
+              <div className="absolute left-3 top-3 rounded-md bg-red-600 px-3 py-1 text-xs font-bold text-white">
                 SOLD · UNAVAILABLE
-              
+              </div>
             )}
             {isArchived && (
-              
+              <div className="absolute left-3 top-3 rounded-md bg-gray-600 px-3 py-1 text-xs font-bold text-white">
                 ARCHIVED
-              
+              </div>
             )}
             {isPending && (
-              
+              <div className="absolute left-3 top-3 rounded-md bg-yellow-500 px-3 py-1 text-xs font-bold text-black">
                 PENDING
-              
+              </div>
             )}
-          
+          </div>
 
           {videoUrl && (
-            
+            <video
+              src={videoUrl}
+              controls
+              className="w-full rounded-xl border border-white/10 bg-black"
+            />
           )}
-        
+        </div>
 
         {/* Right Column - Details */}
-        
-          
+        <div className="space-y-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
             eFootball · {listing.account_status || "Account"}
-          
+          </p>
 
-          
-            {listing.title}
-          
+          <h1 className="text-2xl font-bold">{listing.title}</h1>
 
-          
+          <p className="text-3xl font-extrabold text-green-400">
             {formatNaira(Number(listing.price || 0))}
-          
+          </p>
 
           {/* Status note */}
           {listing.status_notes && (
-            
+            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
               {listing.status_notes}
-            
+            </div>
           )}
 
           {/* Account details */}
           {listing.account_details && (
-            
-              
-                Account Details
-              
-              
+            <div className="rounded-xl border border-white/10 p-4">
+              <h2 className="mb-2 text-sm font-semibold">Account Details</h2>
+              <p className="whitespace-pre-wrap text-sm text-gray-300">
                 {listing.account_details}
-              
-            
+              </p>
+            </div>
           )}
 
           {/* Seller info */}
-          
-            
+          <div className="flex items-center gap-3 rounded-xl border border-white/10 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 font-bold">
               {sellerName.charAt(0).toUpperCase()}
-            
-            
-              
+            </div>
+            <div>
+              <div className="flex items-center gap-2 text-sm font-semibold">
                 {sellerName}
                 {seller?.is_verified && (
-                  
+                  <span className="rounded bg-green-500/20 px-2 py-0.5 text-xs text-green-400">
                     Verified
-                  
+                  </span>
                 )}
-              
+              </div>
               {seller?.rating != null && (
-                
+                <p className="text-xs text-gray-400">
                   Rating: {seller.rating.toFixed(1)}
-                
+                </p>
               )}
-            
-          
+            </div>
+          </div>
 
           {/* Action buttons */}
-          
+          <div className="space-y-3">
             {isAvailable && whatsappUrl && (
-              
-                
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-500"
+              >
+                <FaWhatsapp size={18} />
                 Chat on WhatsApp
-              
+              </a>
             )}
 
             {isAvailable && callUrl && (
-              
-                
+              <a
+                href={callUrl}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-500"
+              >
+                <FaPhone size={16} />
                 Phone Vendor
-              
+              </a>
             )}
 
             {isAvailable && listing.whatsapp_number && (
-               copySellerNumber(listing.whatsapp_number!)}
+              <button
+                type="button"
+                onClick={() => copySellerNumber(listing.whatsapp_number!)}
                 className="btn btn-ghost flex w-full items-center justify-center gap-2 px-5 py-3 text-sm"
               >
                 {copied ? "Number copied!" : "Copy WhatsApp Number"}
-              
+              </button>
             )}
 
             {isOwner && (
-              
+              <Link
+                href={`/accounts/${listing.id}/edit`}
+                className="btn btn-ghost flex w-full items-center justify-center px-5 py-3 text-sm"
+              >
                 Edit Listing
-              
-            )}
-
-            {(isSold || isArchived) && (
-              
-                This account is no longer available.
-              
-            )}
-          
-        
-      
-    
-  );
-}
