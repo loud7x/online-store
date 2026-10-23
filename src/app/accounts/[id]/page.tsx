@@ -1,4 +1,3 @@
-Here’s the full updated code — just copy everything below:
 "use client";
 
 import { useEffect, useState } from "react";
