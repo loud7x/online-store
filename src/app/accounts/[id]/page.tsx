@@ -280,3 +280,102 @@ export default function AccountDetailPage() {
           <h1 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
             {listing.title}
           </h1>
+
+          <p className="mt-4 text-3xl font-bold text-[var(--primary)]">
+            {formatNaira(Number(listing.price || 0))}
+          </p>
+
+          {/* Status note */}
+          {listing.status_notes && (
+            <p className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm text-[var(--muted)]">
+              {listing.status_notes}
+            </p>
+          )}
+
+          {/* Account details */}
+          {listing.account_details && (
+            <div className="mt-6">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+                Account Details
+              </h2>
+              <div className="whitespace-pre-wrap rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-sm leading-relaxed text-white">
+                {listing.account_details}
+              </div>
+            </div>
+          )}
+
+          {/* Seller info */}
+          <div className="mt-8 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--primary)]/20 text-sm font-bold text-[var(--primary)]">
+              {sellerName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="font-medium text-white">
+                {sellerName}
+                {seller?.is_verified && (
+                  <span className="ml-2 rounded bg-blue-600/20 px-2 py-0.5 text-xs text-blue-400">
+                    Verified
+                  </span>
+                )}
+              </p>
+              {seller?.rating != null && (
+                <p className="text-sm text-[var(--muted)]">
+                  Rating: {seller.rating.toFixed(1)}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="mt-8 space-y-3">
+            {isAvailable && whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary flex w-full items-center justify-center gap-2 px-5 py-3.5 text-base"
+              >
+                <FaWhatsapp className="text-xl" />
+                Chat on WhatsApp
+              </a>
+            )}
+
+            {isAvailable && callUrl && (
+              <a
+                href={callUrl}
+                className="btn btn-secondary flex w-full items-center justify-center gap-2 px-5 py-3.5 text-base"
+              >
+                Call Seller
+              </a>
+            )}
+
+            {isAvailable && listing.whatsapp_number && (
+              <button
+                type="button"
+                onClick={() => copySellerNumber(listing.whatsapp_number!)}
+                className="btn btn-ghost flex w-full items-center justify-center gap-2 px-5 py-3 text-sm"
+              >
+                {copied ? "Number copied!" : "Copy WhatsApp Number"}
+              </button>
+            )}
+
+            {isOwner && (
+              <Link
+                href={`/accounts/${listing.id}/edit`}
+                className="btn btn-secondary flex w-full items-center justify-center px-5 py-3"
+              >
+                Edit Listing
+              </Link>
+            )}
+
+            {(isSold || isArchived) && (
+              <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-center text-sm text-[var(--muted)]">
+                This account is no longer available.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
