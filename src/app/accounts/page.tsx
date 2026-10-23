@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { FaWhatsapp } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 
 type Listing = {
@@ -236,7 +236,7 @@ export default function AccountsPage() {
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-12 text-center">
           <p className="text-white">No accounts listed yet.</p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            When a seller publishes an account, it will appear here.
+            When a vendor publishes an account, it will appear here.
           </p>
           <Link
             href="/sell"
@@ -388,7 +388,7 @@ export default function AccountsPage() {
                         }
                         className="btn btn-primary px-3 py-2.5 text-center text-sm"
                       >
-                        DM Seller
+                        Message Vendor
                       </Link>
 
                       {waUrl ? (
@@ -396,16 +396,17 @@ export default function AccountsPage() {
                           href={waUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="btn px-3 py-2.5 text-center text-sm"
+                          className="flex items-center justify-center gap-2 rounded-lg bg-[#25D366] px-3 py-2.5 text-center text-sm font-semibold text-white active:scale-95"
                         >
-                          WhatsApp Seller
+                          <FaWhatsapp size={18} />
+                          Chat on WhatsApp
                         </a>
                       ) : (
                         <button
                           type="button"
                           disabled
                           className="btn px-3 py-2.5 text-sm opacity-50"
-                          title="The seller has not added a WhatsApp number yet"
+                          title="The vendor has not added a WhatsApp number yet"
                         >
                           WhatsApp not added
                         </button>
