@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Platform } from "@/types";
 
 const PLATFORMS: (Platform | "")[] = ["", "PlayStation", "Xbox", "PC", "Android", "iOS"];
@@ -19,6 +19,15 @@ export default function AccountFilters() {
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
+  // Read search param from either 'search' or 'q' to fix header mismatch
+  const queryParam = searchParams.get("search") || searchParams.get("q") || "";
+  const [searchInput, setSearchInput] = useState(queryParam);
+
+  // Keep internal input state in sync with URL search param changes
+  useEffect(() => {
+    setSearchInput(queryParam);
+  }, [queryParam]);
+
   const current = {
     platform: searchParams.get("platform") || "",
     minPrice: searchParams.get("minPrice") || "",
@@ -27,12 +36,13 @@ export default function AccountFilters() {
     minEpic: searchParams.get("minEpic") || "",
     verified: searchParams.get("verified") === "true",
     sort: searchParams.get("sort") || "recent",
-    search: searchParams.get("q") || "",
+    search: queryParam,
   };
 
   const updateParams = useCallback(
     (updates: Record<string, string | boolean>) => {
       const params = new URLSearchParams(searchParams.toString());
+
       Object.entries(updates).forEach(([key, value]) => {
         if (value === "" || value === false) {
           params.delete(key);
@@ -40,6 +50,12 @@ export default function AccountFilters() {
           params.set(key, String(value));
         }
       });
+
+      // Clean up legacy/duplicate key if present
+      if (updates.search !== undefined) {
+        params.delete("q");
+      }
+
       params.delete("page");
       router.push(`/accounts?${params.toString()}`);
     },
@@ -47,6 +63,7 @@ export default function AccountFilters() {
   );
 
   const clearFilters = () => {
+    setSearchInput("");
     router.push("/accounts");
   };
 
@@ -66,10 +83,17 @@ export default function AccountFilters() {
         <input
           type="search"
           placeholder="Search accounts..."
-          defaultValue={current.search}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              updateParams({ q: (e.target as HTMLInputElement).value });
+              e.preventDefault();
+              updateParams({ search: searchInput });
+            }
+          }}
+          onBlur={() => {
+            if (searchInput !== current.search) {
+              updateParams({ search: searchInput });
             }
           }}
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 pl-10 text-sm text-white placeholder:text-[var(--muted-foreground)] focus:border-[var(--primary)] focus:outline-none"
