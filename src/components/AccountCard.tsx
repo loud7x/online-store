@@ -1,135 +1,129 @@
-
-import Link from "next/link";
-import { AccountListing, formatNaira } from "@/data/mock";
+import Link from “next/link”;
+import { AccountListing, formatNaira } from “@/data/mock”;
 
 interface AccountCardProps {
-  account: AccountListing & {
-    imageUrl?: string | null;
-    seller_id?: string | null;
-  };
+account: AccountListing & {
+imageUrl?: string | null;
+seller_id?: string | null;
+};
 }
 
 export default function AccountCard({ account }: AccountCardProps) {
-  const imageUrl = account.imageUrl;
-  const sellerId = account.seller_id;
-  const sellerName = account.seller?.username || "Seller";
+const imageUrl = account.imageUrl;
+const sellerId = account.seller_id;
+const sellerName = account.seller?.username || “Seller”;
 
-  const sellerInfo = (
-    <>
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-medium text-white">
-        {sellerName.slice(0, 2).toUpperCase()}
-      </div>
-
-      <span className="max-w-[100px] truncate text-xs text-[var(--muted)]">
-        {sellerName}
-      </span>
-
-      {account.seller?.verified && (
-        <svg
-          className="h-3.5 w-3.5 shrink-0 text-[var(--primary)]"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          aria-label="Verified seller"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-            clipRule="evenodd"
-          />
-        </svg>
-      )}
-    </>
-  );
-
-  return (
-    <div className="group relative block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] card-hover">
-      <Link
-        href={`/accounts/${account.id}`}
-        className="absolute inset-0 z-10"
-        aria-label={account.title || "View account"}
+const sellerInfo = (
+<>
+{sellerName.slice(0, 2).toUpperCase()}
+  <span className="max-w-[90px] truncate text-[11px] font-medium text-[var(--muted)] sm:max-w-[120px] sm:text-xs">
+    {sellerName}
+  </span>
+  {account.seller?.verified && (
+    <svg
+      className="h-3.5 w-3.5 shrink-0 text-[var(--primary)]"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      role="img"
+      aria-label="Verified seller"
+    >
+      <path
+        fillRule="evenodd"
+        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+        clipRule="evenodd"
       />
+    </svg>
+  )}
+</>
 
-      <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0f0f1a]">
-        {imageUrl ? (
-          <>
-            <img
-              src={imageUrl}
-              alt={account.title || "eFootball account"}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10" />
-          </>
-        ) : (
-          <div className="p-4 text-center">
-            <div className="text-3xl font-bold text-white/90">
-              {account.teamStrength ?? "eFootball"}
-            </div>
-            <div className="mt-1 text-xs uppercase tracking-wider text-[var(--muted)]">
-              {account.teamStrength ? "Team Strength" : "Account"}
-            </div>
-          </div>
-        )}
+);
 
-        {account.isFeatured && (
-          <span className="badge absolute left-3 top-3 bg-[var(--primary)] text-white">
-            Featured
-          </span>
-        )}
+return (
+<Link
+href={/accounts/${account.id}}
+className=“absolute inset-0 z-10 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(–accent)] sm:rounded-2xl”
+aria-label={View ${account.title || "eFootball account"}}
+/>
 
-        {account.isBestValue && (
-          <span className="badge absolute right-3 top-3 bg-[var(--success)] text-white">
-            Best Value
-          </span>
-        )}
-
-        <span className="badge absolute bottom-3 left-3 bg-black/60 text-white backdrop-blur-sm">
-          {account.platform || "eFootball"}
-        </span>
-      </div>
-
-      <div className="space-y-3 p-4">
-        <div>
-          <h3 className="line-clamp-2 text-[15px] font-medium leading-snug text-white transition-colors group-hover:text-[var(--primary)]">
-            {account.title}
-          </h3>
-
-          <p className="mt-1.5 text-lg font-semibold text-white">
-            {formatNaira(account.price)}
-          </p>
+  {/* Account Image */}
+  <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-[#142653] via-[#0b1740] to-[#050b24] sm:aspect-[16/10]">
+    {imageUrl ? (
+      <>
+        <img
+          src={imageUrl}
+          alt={account.title || "eFootball account"}
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#050b24]/80 via-transparent to-black/15" />
+      </>
+    ) : (
+      <div className="p-3 text-center sm:p-4">
+        <div className="text-2xl font-extrabold text-white sm:text-3xl">
+          {account.teamStrength ?? "eFootball"}
         </div>
-
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
-          <span>OVR {account.overallRating ?? 0}</span>
-
-          {(account.epicPlayers ?? 0) > 0 && (
-            <>
-              <span>·</span>
-              <span>{account.epicPlayers} Epic</span>
-            </>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-2">
-          {sellerId ? (
-            <Link
-              href={`/sellers/${sellerId}`}
-              className="relative z-20 flex min-w-0 items-center gap-2 hover:underline"
-            >
-              {sellerInfo}
-            </Link>
-          ) : (
-            <div className="flex min-w-0 items-center gap-2">
-              {sellerInfo}
-            </div>
-          )}
-
-          {(account.seller?.rating ?? 0) > 0 && (
-            <span className="text-xs text-[var(--muted-foreground)]">
-              ★ {account.seller.rating}
-            </span>
-          )}
+        <div className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-[#a7b8df] sm:text-xs">
+          {account.teamStrength ? "Team Strength" : "Account"}
         </div>
       </div>
+    )}
+    {account.isFeatured && (
+      <span className="absolute left-2 top-2 rounded-md border border-white/10 bg-[#174bff]/95 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white sm:left-3 sm:top-3 sm:text-[10px]">
+        Featured
+      </span>
+    )}
+    {account.isBestValue && (
+      <span className="absolute right-2 top-2 rounded-md bg-[#ffe600] px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-[#07102e] sm:right-3 sm:top-3 sm:text-[10px]">
+        Best Value
+      </span>
+    )}
+    <span className="absolute bottom-2 left-2 rounded-md border border-white/10 bg-[#050b24]/85 px-2 py-1 text-[9px] font-semibold text-white backdrop-blur-sm sm:bottom-3 sm:left-3 sm:text-[10px]">
+      {account.platform || "eFootball"}
+    </span>
+  </div>
+  {/* Account Details */}
+  <div className="space-y-2 p-2.5 sm:space-y-3 sm:p-4">
+    <div className="min-w-0">
+      <h3 className="line-clamp-2 min-h-[2.4em] break-words text-xs font-bold leading-5 text-white transition-colors group-hover:text-[var(--accent)] sm:text-[15px] sm:leading-snug">
+        {account.title}
+      </h3>
+      <p className="mt-1.5 break-words text-base font-extrabold leading-tight text-[var(--accent)] sm:mt-2 sm:text-xl">
+        {formatNaira(account.price)}
+      </p>
     </div>
-  );
+    <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px] text-[#a7b8df] sm:gap-x-3 sm:text-xs">
+      <span className="rounded bg-[#142653] px-1.5 py-1">
+        OVR {account.overallRating ?? 0}
+      </span>
+      {(account.epicPlayers ?? 0) > 0 && (
+        <span className="rounded bg-[#142653] px-1.5 py-1">
+          {account.epicPlayers} Epic
+        </span>
+      )}
+    </div>
+    {/* Seller Information */}
+    <div className="flex min-w-0 items-center justify-between gap-1 border-t border-[#20376b] pt-2">
+      {sellerId ? (
+        <Link
+          href={`/sellers/${sellerId}`}
+          className="relative z-20 flex min-w-0 items-center gap-1.5 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] sm:gap-2"
+          aria-label={`View seller ${sellerName}`}
+        >
+          {sellerInfo}
+        </Link>
+      ) : (
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+          {sellerInfo}
+        </div>
+      )}
+      {(account.seller?.rating ?? 0) > 0 && (
+        <span className="shrink-0 text-[10px] font-semibold text-[var(--accent)] sm:text-xs">
+          ★ {account.seller.rating}
+        </span>
+      )}
+    </div>
+  </div>
+</div>
+
+);
 }
