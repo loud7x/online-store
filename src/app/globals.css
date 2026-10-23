@@ -1,35 +1,36 @@
 
+@import "tailwindcss";
+
+/* =========================================
+   LOUDEFOOT — PREMIUM eFOOTBALL THEME
+   Navy + Electric Blue + Bright Yellow
+========================================= */
+
 :root {
-  /* LOUDEFOOT — Premium eFootball Theme */
   --background: #050b24;
   --foreground: #f5f8ff;
 
-  /* Cards and surfaces */
   --card: #0b1740;
   --card-hover: #102357;
+
   --border: #203a78;
   --border-subtle: #142754;
 
-  /* Text */
   --muted: #b8c8e8;
   --muted-foreground: #8498c2;
 
-  /* Electric blue */
   --primary: #174bff;
   --primary-hover: #0d3bd9;
   --primary-foreground: #ffffff;
 
-  /* Signature eFootball yellow */
   --accent: #ffe600;
   --accent-hover: #fff36b;
   --accent-foreground: #07102e;
 
-  /* Status colors */
   --success: #20e58b;
   --warning: #ffe600;
   --danger: #ff4565;
 
-  /* Premium visual effects */
   --blue-glow: rgba(23, 75, 255, 0.3);
   --yellow-glow: rgba(255, 230, 0, 0.22);
 
@@ -46,7 +47,386 @@
     #06102e 100%
   );
 
-  /* Shape and layout */
   --radius: 0.85rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --radius-lg: var(--radius);
+}
+
+/* =========================================
+   BASE
+========================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+img,
+video {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(23, 75, 255, 0.5);
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* =========================================
+   SCROLLBAR
+========================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #25458e;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3768dc;
+}
+
+/* =========================================
+   CONTAINER AND SECTIONS
+========================================= */
+
+.container-main {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-main {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-main {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.section-padding {
+  padding-top: 2.75rem;
+  padding-bottom: 2.75rem;
+}
+
+@media (min-width: 768px) {
+  .section-padding {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+}
+
+/* =========================================
+   PREMIUM CARDS
+========================================= */
+
+.card-hover {
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);
+  border-color: #3568ff;
+  background-color: var(--card-hover);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.premium-card {
+  background: var(--card-gradient);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.premium-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 28px var(--blue-glow);
+}
+
+/* =========================================
+   PREMIUM BUTTONS
+========================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.75rem 1.1rem;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #fff000 0%, #ffd500 100%);
+  color: #07102e;
+  border: 1px solid #fff36b;
+  box-shadow: 0 4px 18px rgba(255, 230, 0, 0.18);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fff75a 0%, #ffe000 100%);
+  box-shadow: 0 6px 24px rgba(255, 230, 0, 0.3);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #10275d 0%, #0a1740 100%);
+  color: #ffffff;
+  border: 1px solid #2860ff;
+}
+
+.btn-secondary:hover {
+  background: #173578;
+  border-color: var(--accent);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+
+.btn-ghost:hover {
+  color: #ffffff;
+  background: rgba(35, 84, 255, 0.14);
+}
+
+/* =========================================
+   BADGES
+========================================= */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  line-height: 1.25;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.badge-verified {
+  color: #20e58b;
+  background: rgba(32, 229, 139, 0.1);
+  border-color: rgba(32, 229, 139, 0.25);
+}
+
+.badge-featured {
+  color: #07102e;
+  background: var(--accent);
+}
+
+/* =========================================
+   HEADINGS AND GLOW EFFECTS
+========================================= */
+
+.text-gradient {
+  background: linear-gradient(
+    135deg,
+    #fff36b 0%,
+    #ffe600 35%,
+    #5c91ff 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-blue {
+  box-shadow: 0 0 24px var(--blue-glow);
+}
+
+.glow-yellow {
+  box-shadow: 0 0 24px var(--yellow-glow);
+}
+
+.heading-accent {
+  position: relative;
+}
+
+.heading-accent::after {
+  content: "";
+  display: block;
+  width: 52px;
+  height: 4px;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+/* =========================================
+   FORMS
+========================================= */
+
+input,
+textarea,
+select {
+  max-width: 100%;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  border-radius: 0.7rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline-color: var(--primary);
+}
+
+::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+/* =========================================
+   MOBILE-FRIENDLY INTERACTIONS
+========================================= */
+
+@media (max-width: 639px) {
+  .container-main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .section-padding {
+    padding-top: 2.25rem;
+    padding-bottom: 2.25rem;
+  }
+
+  .btn {
+    min-height: 46px;
+  }
+
+  .card-hover:hover {
+    transform: none;
+  }
+}
+
+/* =========================================
+   ACCESSIBILITY
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================
+   MOBILE SAFE AREA
+========================================= */
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
