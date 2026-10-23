@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -10,6 +10,7 @@ export default function Header() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const supabase = createClient();
   const router = useRouter();
@@ -63,6 +64,16 @@ export default function Header() {
 
   function closeMenu() {
     setMobileOpen(false);
+  }
+
+  function handleSearch(e: FormEvent) {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/accounts?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push("/accounts");
+    }
+    closeMenu();
   }
 
   return (
@@ -195,12 +206,31 @@ export default function Header() {
           </button>
         </div>
 
-        {/* Simplified mobile account menu */}
+        {/* Mobile menu with Search Bar */}
         {mobileOpen && (
           <div
             id="mobile-account-menu"
             className="border-t border-[var(--border)] py-4 md:hidden"
           >
+            {/* Search Bar inside Hamburger Menu */}
+            <form onSubmit={handleSearch} className="mb-4 flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Search accounts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm text-white placeholder-[var(--muted)] focus:border-[var(--primary)] focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-black transition hover:opacity-90"
+              >
+                Search
+              </button>
+            </form>
+
             {loggedIn ? (
               <>
                 <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
