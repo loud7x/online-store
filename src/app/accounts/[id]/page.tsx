@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { FaWhatsapp } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 
 type Listing = {
@@ -39,7 +39,6 @@ export default function AccountDetailPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,20 +137,6 @@ export default function AccountDetailPage() {
     };
   }, [id]);
 
-  async function copySellerNumber(number: string) {
-    try {
-      await navigator.clipboard.writeText(number);
-      setCopied(true);
-      setError("");
-
-      window.setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setError(
-        "Could not copy the number automatically. Please select and copy it manually."
-      );
-    }
-  }
-
   if (loading) {
     return (
       <main className="container-main section-padding">
@@ -199,8 +184,6 @@ export default function AccountDetailPage() {
   const whatsappUrl = whatsappDigits
     ? `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(whatsappMessage)}`
     : null;
-
-  const callUrl = whatsappDigits ? `tel:+${whatsappDigits}` : null;
 
   return (
     <main className="container-main section-padding">
@@ -319,53 +302,39 @@ export default function AccountDetailPage() {
 
           {isAvailable && !isOwner && (
             <div className="mt-6 space-y-3">
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-                <h2 className="font-semibold text-white">
-                  Contact Seller
-                </h2>
+              {/* Message Vendor Button */}
+              <Link
+                href={
+                  userId
+                    ? `/messages?listingId=${encodeURIComponent(listing.id)}`
+                    : "/login"
+                }
+                className="btn btn-primary flex w-full items-center justify-center px-4 py-3 text-center text-sm font-semibold"
+              >
+                Message Vendor
+              </Link>
 
-                {whatsappDigits ? (
-                  <>
-                    <p className="mt-2 text-sm text-[var(--muted)]">
-                      Seller's phone number
-                    </p>
-
-                    <p className="mt-1 break-all text-lg font-semibold text-white">
-                      +{whatsappDigits}
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => void copySellerNumber(whatsappDigits)}
-                      className="btn mt-3 w-full px-4 py-3"
-                    >
-                      {copied ? "Number Copied ✓" : "Copy Phone Number"}
-                    </button>
-
-                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <a
-                        href={whatsappUrl ?? undefined}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-primary px-4 py-3 text-center"
-                      >
-                        WhatsApp Seller
-                      </a>
-
-                      <a
-                        href={callUrl ?? undefined}
-                        className="btn px-4 py-3 text-center"
-                      >
-                        Call Seller
-                      </a>
-                    </div>
-                  </>
-                ) : (
-                  <p className="mt-2 text-sm text-[var(--muted)]">
-                    The seller has not added a WhatsApp phone number yet.
-                  </p>
-                )}
-              </div>
+              {/* Chat on WhatsApp Button */}
+              {whatsappUrl ? (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 py-3 text-center text-sm font-semibold text-white active:scale-95"
+                >
+                  <FaWhatsapp size={18} />
+                  Chat on WhatsApp
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="btn w-full px-4 py-3 text-sm opacity-50"
+                  title="The vendor has not added a WhatsApp number yet"
+                >
+                  WhatsApp not added
+                </button>
+              )}
             </div>
           )}
 
