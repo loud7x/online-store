@@ -1,15 +1,16 @@
 
 :root {
-  /* LOUDEFOOT — eFootball-inspired premium theme */
+  /* LOUDEFOOT — Premium eFootball Theme */
   --background: #050b24;
   --foreground: #f5f8ff;
 
+  /* Cards and surfaces */
   --card: #0b1740;
   --card-hover: #102357;
-
   --border: #203a78;
   --border-subtle: #142754;
 
+  /* Text */
   --muted: #b8c8e8;
   --muted-foreground: #8498c2;
 
@@ -20,10 +21,32 @@
 
   /* Signature eFootball yellow */
   --accent: #ffe600;
+  --accent-hover: #fff36b;
+  --accent-foreground: #07102e;
 
+  /* Status colors */
   --success: #20e58b;
   --warning: #ffe600;
   --danger: #ff4565;
 
+  /* Premium visual effects */
+  --blue-glow: rgba(23, 75, 255, 0.3);
+  --yellow-glow: rgba(255, 230, 0, 0.22);
+
+  --card-gradient: linear-gradient(
+    145deg,
+    #10275d 0%,
+    #081332 100%
+  );
+
+  --hero-gradient: linear-gradient(
+    135deg,
+    #050b24 0%,
+    #102b79 55%,
+    #06102e 100%
+  );
+
+  /* Shape and layout */
   --radius: 0.85rem;
 }
+
