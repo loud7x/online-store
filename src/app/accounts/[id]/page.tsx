@@ -356,3 +356,11 @@ export default function AccountDetailPage() {
                 className="btn btn-ghost flex w-full items-center justify-center px-5 py-3 text-sm"
               >
                 Edit Listing
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
