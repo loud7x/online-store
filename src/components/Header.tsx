@@ -1,255 +1,268 @@
+“use client”;
 
-"use client";
-
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/accounts", label: "Browse Accounts" },
-  { href: "/sell", label: "Sell" },
-  { href: "/exchange", label: "Exchange Hub" },
-];
+import Link from “next/link”;
+import { useEffect, useState } from “react”;
+import { useRouter } from “next/navigation”;
+import { createClient } from “@/lib/supabase/client”;
 
 export default function Header() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
-  const [loggingOut, setLoggingOut] = useState(false);
-  const supabase = createClient();
-  const router = useRouter();
+const [mobileOpen, setMobileOpen] = useState(false);
+const [loggedIn, setLoggedIn] = useState(false);
+const [userEmail, setUserEmail] = useState(””);
+const [loggingOut, setLoggingOut] = useState(false);
 
-  useEffect(() => {
-    let active = true;
+const supabase = createClient();
+const router = useRouter();
 
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (!active) return;
+useEffect(() => {
+let active = true;
 
-      if (error || !data.user) {
-        setLoggedIn(false);
-        setUserEmail("");
-        return;
-      }
-
-      setLoggedIn(true);
-      setUserEmail(data.user.email ?? "");
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      setLoggedIn(!!session);
-      setUserEmail(session?.user.email ?? "");
-    });
-
-    return () => {
-      active = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
-
-  async function handleLogout() {
-    setLoggingOut(true);
-
-    const { error } = await supabase.auth.signOut();
-
-    setLoggingOut(false);
-
-    if (error) {
-      alert(`Could not log out: ${error.message}`);
-      return;
-    }
-
+async function loadUser() {
+  const { data, error } = await supabase.auth.getUser();
+  if (!active) return;
+  if (error || !data.user) {
     setLoggedIn(false);
     setUserEmail("");
-    setMobileOpen(false);
-    router.push("/login");
-    router.refresh();
+    return;
   }
+  setLoggedIn(true);
+  setUserEmail(data.user.email ?? "");
+}
+void loadUser();
+const {
+  data: { subscription },
+} = supabase.auth.onAuthStateChange((_event, session) => {
+  if (!active) return;
+  setLoggedIn(!!session);
+  setUserEmail(session?.user.email ?? "");
+});
+return () => {
+  active = false;
+  subscription.unsubscribe();
+};
 
-  return (
-    <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-md">
-      <div className="container-main">
-        <div className="flex h-16 items-center justify-between gap-4">
-          {/* Logo */}
-          <Link href="/" className="flex shrink-0 items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)] text-sm font-bold text-white">
-              L
-            </div>
-            <span className="text-lg font-semibold tracking-tight text-white">
-              LOUDE<span className="text-[var(--primary)]">FOOT</span>
-            </span>
-          </Link>
+}, [supabase]);
 
-          {/* Desktop navigation */}
-          <nav className="hidden items-center gap-1 md:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-md px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-white"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+async function handleLogout() {
+setLoggingOut(true);
 
-          {/* Desktop actions */}
-          <div className="hidden items-center gap-2 md:flex">
-            <Link href="/messages" className="btn btn-ghost px-3 py-2 text-sm">
-              Messages
-            </Link>
+const { error } = await supabase.auth.signOut();
+setLoggingOut(false);
+if (error) {
+  alert(`Could not log out: ${error.message}`);
+  return;
+}
+setLoggedIn(false);
+setUserEmail("");
+setMobileOpen(false);
+router.push("/login");
+router.refresh();
 
-            {loggedIn ? (
-              <>
-                <span
-                  className="max-w-40 truncate px-2 text-sm text-[var(--muted)]"
-                  title={userEmail}
-                >
-                  {userEmail || "My account"}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={loggingOut}
-                  className="btn btn-secondary px-4 py-2 text-sm disabled:opacity-50"
-                >
-                  {loggingOut ? "Logging out..." : "Log out"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={loggingOut}
-                  className="px-2 py-2 text-sm text-[var(--muted)] hover:text-white disabled:opacity-50"
-                >
-                  Switch account
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="btn px-4 py-2 text-sm">
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  className="btn btn-primary px-4 py-2 text-sm"
-                >
-                  Sign up
-                </Link>
-              </>
-            )}
-          </div>
+}
 
-          {/* Mobile menu button */}
-          <button
-            type="button"
-            className="p-2 text-[var(--muted)] hover:text-white md:hidden"
-            onClick={() => setMobileOpen((open) => !open)}
-            aria-label="Toggle menu"
-            aria-expanded={mobileOpen}
-          >
-            {mobileOpen ? (
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            )}
-          </button>
-        </div>
+function closeMenu() {
+setMobileOpen(false);
+}
 
-        {/* Mobile navigation */}
-        {mobileOpen && (
-          <div className="space-y-1 border-t border-[var(--border)] py-4 md:hidden">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block rounded-md px-3 py-2.5 text-[var(--muted)] hover:bg-white/5 hover:text-white"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-
+return (
+{/* LOUDEFOOT logo */}
+L
+        <span className="text-xl font-extrabold tracking-tight text-white">
+          LOUDE<span className="text-[var(--primary)]">FOOT</span>
+        </span>
+      </Link>
+      {/* Desktop navigation */}
+      <nav className="hidden items-center gap-1 md:flex">
+        <Link
+          href="/"
+          className="rounded-lg px-3 py-2 text-sm text-[var(--muted)] transition hover:bg-white/5 hover:text-white"
+        >
+          Home
+        </Link>
+        <Link
+          href="/accounts"
+          className="rounded-lg px-3 py-2 text-sm text-[var(--muted)] transition hover:bg-white/5 hover:text-white"
+        >
+          Accounts
+        </Link>
+        <Link
+          href="/sell"
+          className="rounded-lg px-3 py-2 text-sm text-[var(--muted)] transition hover:bg-white/5 hover:text-white"
+        >
+          Sell
+        </Link>
+        <Link
+          href="/exchange"
+          className="rounded-lg px-3 py-2 text-sm text-[var(--muted)] transition hover:bg-white/5 hover:text-white"
+        >
+          Exchange
+        </Link>
+      </nav>
+      {/* Desktop account actions */}
+      <div className="hidden items-center gap-2 md:flex">
+        <Link
+          href="/messages"
+          className="btn btn-ghost px-3 py-2 text-sm"
+        >
+          Messages
+        </Link>
+        {loggedIn ? (
+          <>
             <Link
-              href="/messages"
-              className="block rounded-md px-3 py-2.5 text-[var(--muted)] hover:bg-white/5 hover:text-white"
-              onClick={() => setMobileOpen(false)}
+              href="/profile"
+              title={userEmail}
+              className="max-w-40 truncate px-2 py-2 text-sm text-[var(--muted)] hover:text-white"
             >
-              Messages
+              My Profile
             </Link>
-
-            <div className="mt-3 flex flex-col gap-2 border-t border-[var(--border)] pt-3">
-              {loggedIn ? (
-                <>
-                  <p className="break-all px-3 py-2 text-sm text-[var(--muted)]">
-                    Signed in as {userEmail || "My account"}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={loggingOut}
-                    className="btn btn-secondary w-full py-2.5 text-sm disabled:opacity-50"
-                  >
-                    {loggingOut ? "Logging out..." : "Log out"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={loggingOut}
-                    className="w-full py-2.5 text-sm text-[var(--muted)] hover:text-white disabled:opacity-50"
-                  >
-                    Switch account
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="btn btn-secondary w-full py-2.5 text-sm"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="btn btn-primary w-full py-2.5 text-sm"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Sign up
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="btn btn-secondary px-4 py-2 text-sm disabled:opacity-50"
+            >
+              {loggingOut ? "Logging out..." : "Log out"}
+            </button>
+          </>
+        ) : (
+          <>
+            <Link href="/login" className="btn px-4 py-2 text-sm">
+              Log in
+            </Link>
+            <Link
+              href="/register"
+              className="btn btn-primary px-4 py-2 text-sm"
+            >
+              Sign up
+            </Link>
+          </>
         )}
       </div>
-    </header>
-  );
+      {/* Compact mobile menu button */}
+      <button
+        type="button"
+        className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border)] text-white transition hover:border-[var(--primary)] hover:bg-white/5 md:hidden"
+        onClick={() => setMobileOpen((open) => !open)}
+        aria-label={mobileOpen ? "Close account menu" : "Open account menu"}
+        aria-expanded={mobileOpen}
+        aria-controls="mobile-account-menu"
+      >
+        {mobileOpen ? (
+          <svg
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        ) : (
+          <svg
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        )}
+      </button>
+    </div>
+    {/* Simplified mobile account menu */}
+    {mobileOpen && (
+      <div
+        id="mobile-account-menu"
+        className="border-t border-[var(--border)] py-4 md:hidden"
+      >
+        {loggedIn ? (
+          <>
+            <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Signed in as
+              </p>
+              <p className="mt-1 break-all text-sm font-medium text-white">
+                {userEmail || "My account"}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Link
+                href="/profile"
+                onClick={closeMenu}
+                className="flex items-center justify-between rounded-xl border border-[var(--border)] px-4 py-3 text-sm font-semibold text-white transition hover:border-[var(--primary)]"
+              >
+                My Profile
+                <span className="text-[var(--accent)]">→</span>
+              </Link>
+              <Link
+                href="/messages"
+                onClick={closeMenu}
+                className="flex items-center justify-between rounded-xl border border-[var(--border)] px-4 py-3 text-sm font-semibold text-white transition hover:border-[var(--primary)]"
+              >
+                Messages
+                <span className="text-[var(--accent)]">→</span>
+              </Link>
+              <Link
+                href="/my-listings"
+                onClick={closeMenu}
+                className="flex items-center justify-between rounded-xl border border-[var(--border)] px-4 py-3 text-sm font-semibold text-white transition hover:border-[var(--primary)]"
+              >
+                My Listings
+                <span className="text-[var(--accent)]">→</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="mt-3 w-full rounded-xl border border-red-500/40 px-4 py-3 text-sm font-bold text-red-300 transition hover:bg-red-500/10 disabled:opacity-50"
+              >
+                {loggingOut ? "Logging out..." : "Log out"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-4">
+              <p className="text-sm font-semibold text-white">
+                Welcome to LOUDEFOOT
+              </p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                Sign in to manage your account and listings.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <Link
+                href="/login"
+                onClick={closeMenu}
+                className="btn btn-secondary flex w-full items-center justify-center px-4 py-3 text-sm"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                onClick={closeMenu}
+                className="btn btn-primary flex w-full items-center justify-center px-4 py-3 text-sm"
+              >
+                Sign up
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+    )}
+  </div>
+</header>
+
+);
 }
