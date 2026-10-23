@@ -38,7 +38,7 @@ function formatNaira(amount: number) {
 
 export default function AccountDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string | undefined;
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [seller, setSeller] = useState<Seller | null>(null);
@@ -53,92 +53,104 @@ export default function AccountDetailPage() {
     let cancelled = false;
 
     async function getMediaUrl(path: string | null) {
-      if (!path?.trim()) return null;
+      try {
+        if (!path?.trim()) return null;
 
-      const value = path.trim();
+        const value = path.trim();
 
-      if (value.startsWith("https://") || value.startsWith("http://")) {
-        return value;
+        if (value.startsWith("https://") || value.startsWith("http://")) {
+          return value;
+        }
+
+        const cleanPath = value
+          .replace(/^\/+/, "")
+          .replace(/^account-media\//, "");
+
+        const supabase = createClient();
+
+        const { data, error } = await supabase.storage
+          .from("account-media")
+          .createSignedUrl(cleanPath, 3600);
+
+        if (error) return null;
+
+        return data?.signedUrl ?? null;
+      } catch {
+        return null;
       }
-
-      const cleanPath = value
-        .replace(/^\/+/, "")
-        .replace(/^account-media\//, "");
-
-      const supabase = createClient();
-
-      const { data, error } = await supabase.storage
-        .from("account-media")
-        .createSignedUrl(cleanPath, 3600);
-
-      if (error) return null;
-
-      return data?.signedUrl ?? null;
     }
 
-    async function loadAccount() {
-      setLoading(true);
-      setError("");
+    async function loadAccount(accountId: string) {
+      try {
+        setLoading(true);
+        setError("");
 
-      const supabase = createClient();
+        const supabase = createClient();
 
-      const { data: authData } = await supabase.auth.getUser();
+        const { data: authData } = await supabase.auth.getUser();
 
-      if (!cancelled) {
-        setUserId(authData.user?.id ?? null);
+        if (!cancelled) {
+          setUserId(authData.user?.id ?? null);
+        }
+
+        const { data: listingData, error: listingError } = await supabase
+          .from("listings")
+          .select(
+            "id, user_id, title, price, images, account_video_url, account_status, status_notes, account_details, whatsapp_number, status, created_at"
+          )
+          .eq("id", accountId)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (listingError) {
+          setError(listingError.message);
+          return;
+        }
+
+        if (!listingData) {
+          setError("This account listing could not be found.");
+          return;
+        }
+
+        const account = listingData as Listing;
+        setListing(account);
+
+        const { data: sellerData } = await supabase
+          .from("users")
+          .select("id, username, is_verified, rating")
+          .eq("id", account.user_id)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        setSeller((sellerData as Seller | null) ?? null);
+
+        const firstImage = account.images?.[0] ?? null;
+
+        const [resolvedImage, resolvedVideo] = await Promise.all([
+          getMediaUrl(firstImage),
+          getMediaUrl(account.account_video_url),
+        ]);
+
+        if (cancelled) return;
+
+        setImageUrl(resolvedImage);
+        setVideoUrl(resolvedVideo);
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Something went wrong.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-
-      const { data: listingData, error: listingError } = await supabase
-        .from("listings")
-        .select(
-          "id, user_id, title, price, images, account_video_url, account_status, status_notes, account_details, whatsapp_number, status, created_at"
-        )
-        .eq("id", id)
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      if (listingError) {
-        setError(listingError.message);
-        setLoading(false);
-        return;
-      }
-
-      if (!listingData) {
-        setError("This account listing could not be found.");
-        setLoading(false);
-        return;
-      }
-
-      const account = listingData as Listing;
-      setListing(account);
-
-      const { data: sellerData } = await supabase
-        .from("users")
-        .select("id, username, is_verified, rating")
-        .eq("id", account.user_id)
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      setSeller((sellerData as Seller | null) ?? null);
-
-      const firstImage = account.images?.[0] ?? null;
-
-      const [resolvedImage, resolvedVideo] = await Promise.all([
-        getMediaUrl(firstImage),
-        getMediaUrl(account.account_video_url),
-      ]);
-
-      if (cancelled) return;
-
-      setImageUrl(resolvedImage);
-      setVideoUrl(resolvedVideo);
-      setLoading(false);
     }
 
     if (id) {
-      void loadAccount();
+      void loadAccount(id);
+    } else {
+      setError("No account selected. Open an account from the list.");
+      setLoading(false);
     }
 
     return () => {
