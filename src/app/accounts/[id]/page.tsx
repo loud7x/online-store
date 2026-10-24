@@ -392,7 +392,7 @@ export default function AccountDetailPage() {
 
             {isOwner && (
               <Link
-                href={`/accounts/${listing.id}/edit`}
+                href={`/my-listings/edit/${listing.id}`}
                 className="btn btn-ghost flex w-full items-center justify-center px-5 py-3 text-sm"
               >
                 Edit Listing
