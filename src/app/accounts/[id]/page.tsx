@@ -12,6 +12,7 @@ type Listing = {
   user_id: string;
   title: string;
   price: number;
+  game: string | null;
   images: string[] | null;
   account_video_url: string | null;
   account_status: string | null;
@@ -110,7 +111,7 @@ export default function AccountDetailPage() {
         const { data: listingData, error: listingError } = await supabase
           .from("listings")
           .select(
-            "id, user_id, title, price, images, account_video_url, account_status, status_notes, account_details, whatsapp_number, status, created_at"
+            "id, user_id, title, price, game, images, account_video_url, account_status, status_notes, account_details, whatsapp_number, status, created_at"
           )
           .eq("id", accountId)
           .maybeSingle();
@@ -212,10 +213,11 @@ export default function AccountDetailPage() {
   const isAvailable = status === "active";
   const sellerName = seller?.username || "Seller";
   const isVerifiedSeller = seller?.is_verified === true;
+  const gameName = listing.game || "eFootball";
 
   const whatsappDigits = (listing.whatsapp_number || "").replace(/\D/g, "");
 
-  const whatsappMessage = `Hi, I'm interested in your eFootball account "${listing.title}" listed on LOUDEFOOT for ${formatNaira(
+  const whatsappMessage = `Hi, I'm interested in your ${gameName} account "${listing.title}" listed on LoudVault for ${formatNaira(
     Number(listing.price || 0)
   )}. Is it still available?`;
 
@@ -291,7 +293,7 @@ export default function AccountDetailPage() {
         {/* Right Column - Details */}
         <div className="space-y-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-            eFootball · {listing.account_status || "Account"}
+            {gameName} · {listing.account_status || "Account"}
           </p>
 
           <h1 className="text-2xl font-bold">{listing.title}</h1>
