@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FaWhatsapp, FaPhone } from "react-icons/fa";
+import { MdVerified } from "react-icons/md";
 import { createClient } from "@/lib/supabase/client";
 
 type Listing = {
@@ -193,6 +194,7 @@ export default function AccountDetailPage() {
   const isPending = status === "pending";
   const isAvailable = status === "active";
   const sellerName = seller?.username || "Seller";
+  const isVerifiedSeller = seller?.is_verified === true;
 
   const whatsappDigits = (listing.whatsapp_number || "").replace(/\D/g, "");
 
@@ -300,11 +302,15 @@ export default function AccountDetailPage() {
               {sellerName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div className="flex items-center gap-2 text-sm font-semibold">
+              <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                 {sellerName}
-                {seller?.is_verified && (
-                  <span className="rounded bg-green-500/20 px-2 py-0.5 text-xs text-green-400">
-                    Verified
+                {isVerifiedSeller ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-400">
+                    <MdVerified className="h-3.5 w-3.5" /> Verified Vendor
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-300">
+                    Unverified seller
                   </span>
                 )}
               </div>
@@ -315,6 +321,17 @@ export default function AccountDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Unverified warning */}
+          {isAvailable && !isVerifiedSeller && !isOwner && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              <p className="font-semibold">Be careful: this seller is not verified.</p>
+              <p className="mt-1 text-red-300/90">
+                Do not send money before you have checked the account yourself.
+                Prefer verified vendors when you can.
+              </p>
+            </div>
+          )}
 
           {/* Action buttons */}
           <div className="space-y-3">
