@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { createPortal } from "react-dom";
 import { MdVerified } from "react-icons/md";
 import { AccountListing, formatNaira } from "@/data/mock";
 
@@ -10,6 +14,7 @@ interface AccountCardProps {
 }
 
 export default function AccountCard({ account }: AccountCardProps) {
+  const [viewerOpen, setViewerOpen] = useState(false);
   const imageUrl = account.imageUrl;
   const sellerId = account.seller_id;
   const sellerName = account.seller?.username || "Seller";
@@ -33,8 +38,13 @@ export default function AccountCard({ account }: AccountCardProps) {
         aria-label={`View ${account.title || "eFootball account"}`}
       />
 
-      {/* Account Image */}
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-[#142653] via-[#0b1740] to-[#050b24] sm:aspect-[16/10]">
+      {/* Account Image (tap to enlarge) */}
+      <div
+        className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-[#142653] via-[#0b1740] to-[#050b24] sm:aspect-[16/10] ${
+          imageUrl ? "z-20 cursor-zoom-in" : ""
+        }`}
+        onClick={imageUrl ? () => setViewerOpen(true) : undefined}
+      >
         {imageUrl ? (
           <>
             <img
@@ -69,6 +79,32 @@ export default function AccountCard({ account }: AccountCardProps) {
           {account.platform || "eFootball"}
         </span>
       </div>
+
+      {/* Full-screen image viewer */}
+      {viewerOpen &&
+        imageUrl &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4"
+            onClick={() => setViewerOpen(false)}
+          >
+            <button
+              type="button"
+              aria-label="Close"
+              className="absolute right-4 top-4 text-4xl leading-none text-white"
+              onClick={() => setViewerOpen(false)}
+            >
+              ×
+            </button>
+            <img
+              src={imageUrl}
+              alt={account.title || "eFootball account"}
+              className="max-h-[90vh] max-w-full rounded-lg object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>,
+          document.body
+        )}
 
       {/* Account Details */}
       <div className="space-y-2 p-2.5 sm:space-y-3 sm:p-4">
