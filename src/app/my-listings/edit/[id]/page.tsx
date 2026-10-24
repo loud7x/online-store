@@ -5,6 +5,36 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+const GAMES = {
+  eFootball: {
+    titlePlaceholder: "e.g. Epic cards, Big Time cards",
+    statusPlaceholder: "e.g. Double link, Link safe, Link deleted",
+    detailsPlaceholder: "Players, team strength, and other details",
+  },
+  "Free Fire": {
+    titlePlaceholder: "e.g. Level 70, Elite Pass, rare bundles",
+    statusPlaceholder: "e.g. Facebook linked, Google linked, Guest account",
+    detailsPlaceholder: "Level, rank, diamonds, skins, bundles, and other details",
+  },
+  CODM: {
+    titlePlaceholder: "e.g. Legendary guns, Level 150, Mythic skins",
+    statusPlaceholder: "e.g. Facebook linked, Garena linked, Activision linked",
+    detailsPlaceholder: "Level, rank, CP, guns, operators, skins, and other details",
+  },
+} as const;
+
+type GameKey = keyof typeof GAMES;
+
+function normalizeGame(value: unknown): GameKey {
+  if (typeof value === "string") {
+    const match = (Object.keys(GAMES) as GameKey[]).find(
+      (key) => key.toLowerCase() === value.trim().toLowerCase()
+    );
+    if (match) return match;
+  }
+  return "eFootball";
+}
+
 export default function EditListingPage() {
   const params = useParams();
   const router = useRouter();
@@ -15,6 +45,7 @@ export default function EditListingPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [game, setGame] = useState<GameKey>("eFootball");
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
@@ -26,6 +57,8 @@ export default function EditListingPage() {
   const [existingVideo, setExistingVideo] = useState("");
   const [newImages, setNewImages] = useState<File[]>([]);
   const [newVideo, setNewVideo] = useState<File | null>(null);
+
+  const config = GAMES[game];
 
   useEffect(() => {
     async function loadListing() {
@@ -40,7 +73,7 @@ export default function EditListingPage() {
       const { data, error } = await supabase
         .from("listings")
         .select(
-          "id, user_id, title, price, whatsapp_number, account_details, account_status, status_notes, images, account_video_url"
+          "id, user_id, game, title, price, whatsapp_number, account_details, account_status, status_notes, images, account_video_url"
         )
         .eq("id", id)
         .eq("user_id", authData.user.id)
@@ -54,6 +87,7 @@ export default function EditListingPage() {
         return;
       }
 
+      setGame(normalizeGame(data.game));
       setTitle(data.title ?? "");
       setPrice(String(data.price ?? ""));
       setWhatsappNumber(data.whatsapp_number ?? "");
@@ -158,6 +192,7 @@ export default function EditListingPage() {
       const { data, error } = await supabase
         .from("listings")
         .update({
+          game: game,
           title: title.trim(),
           price: Number(price),
           whatsapp_number: whatsappNumber.trim(),
@@ -239,6 +274,28 @@ export default function EditListingPage() {
         >
           <div>
             <label className="mb-2 block text-sm font-medium text-white">
+              Game
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.keys(GAMES) as GameKey[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setGame(key)}
+                  className={`rounded-lg border p-3 text-sm font-semibold transition ${
+                    game === key
+                      ? "border-[var(--primary)] bg-[var(--primary)]/10 text-white"
+                      : "border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--primary)]"
+                  }`}
+                >
+                  {key}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-white">
               Listing Title
             </label>
             <input
@@ -246,7 +303,7 @@ export default function EditListingPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-white"
-              placeholder="e.g. 3200 coins account"
+              placeholder={config.titlePlaceholder}
             />
           </div>
 
@@ -288,7 +345,7 @@ export default function EditListingPage() {
               value={accountStatus}
               onChange={(e) => setAccountStatus(e.target.value)}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-white"
-              placeholder="e.g. Double link, Link safe"
+              placeholder={config.statusPlaceholder}
             />
           </div>
 
@@ -315,8 +372,11 @@ export default function EditListingPage() {
               value={accountDetails}
               onChange={(e) => setAccountDetails(e.target.value)}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-white"
-              placeholder="Players, team strength, and other details"
+              placeholder={config.detailsPlaceholder}
             />
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              Never include passwords, login credentials, or recovery codes.
+            </p>
           </div>
 
           <div className="rounded-xl border border-[var(--border)] p-4">
