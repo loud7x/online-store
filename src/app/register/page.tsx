@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,6 +15,13 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+
+  function resetCaptcha() {
+    turnstileRef.current?.reset();
+    setCaptchaToken(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,6 +38,10 @@ export default function RegisterPage() {
     }
     if (!accepted) {
       setError("You must accept the Terms and acknowledge the risks.");
+      return;
+    }
+    if (!captchaToken) {
+      setError("Please complete the CAPTCHA check.");
       return;
     }
 
@@ -49,20 +61,27 @@ export default function RegisterPage() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { username },
+          captchaToken,
         },
       });
       if (authError) {
         setError(authError.message);
+        resetCaptcha();
+      } else if (data.session) {
+        router.push("/");
+        router.refresh();
       } else {
         setMessage("Check your email to verify your account, then log in.");
+        resetCaptcha();
       }
     } catch {
       setError("Unable to connect. Check your configuration.");
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -172,9 +191,17 @@ export default function RegisterPage() {
             </span>
           </label>
 
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+            onSuccess={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+          />
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="btn btn-primary w-full py-2.5 text-sm disabled:opacity-60"
           >
             {loading ? "Creating account..." : "Create account"}
