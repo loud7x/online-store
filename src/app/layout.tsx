@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -18,25 +17,30 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "LOUDEFOOT — eFootball Account Marketplace",
-    template: "%s | LOUDEFOOT",
+    default: "LoudVault — Game Account Marketplace",
+    template: "%s | LoudVault",
   },
   description:
-    "Buy, sell, and exchange eFootball accounts. Get your eFootball coins loaded. Premium marketplace for Nigerian players.",
+    "Buy, sell, and exchange eFootball, Free Fire and CODM accounts safely. Secure payments and verified sellers. Premium marketplace for Nigerian gamers.",
   keywords: [
-    "eFootball",
+    "LoudVault",
+    "game accounts",
+    "buy game account",
+    "sell game account",
     "eFootball accounts",
-    "buy eFootball account",
-    "eFootball coins",
+    "Free Fire accounts",
+    "CODM accounts",
+    "Call of Duty Mobile accounts",
     "account trading",
     "Nigeria",
   ],
   openGraph: {
-    title: "LOUDEFOOT — eFootball Account Marketplace",
+    title: "LoudVault — Game Account Marketplace",
     description:
-      "Buy, sell, exchange accounts and load coins — all in one place.",
+      "Buy, sell and exchange eFootball, Free Fire and CODM accounts — all in one place.",
     type: "website",
     locale: "en_NG",
+    siteName: "LoudVault",
   },
   robots: {
     index: true,
