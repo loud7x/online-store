@@ -80,7 +80,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--background)]/90 backdrop-blur">
       <div className="container-main">
         <div className="flex h-16 items-center justify-between gap-3">
-          {/* LOUDEFOOT logo */}
+          {/* LoudVault logo */}
           <Link
             href="/"
             onClick={closeMenu}
@@ -90,7 +90,7 @@ export default function Header() {
               L
             </span>
             <span className="text-xl font-extrabold tracking-tight text-white">
-              LOUDE<span className="text-[var(--primary)]">FOOT</span>
+              Loud<span className="text-[var(--primary)]">Vault</span>
             </span>
           </Link>
 
@@ -280,7 +280,7 @@ export default function Header() {
               <>
                 <div className="mb-4">
                   <p className="text-sm font-semibold text-white">
-                    Welcome to LOUDEFOOT
+                    Welcome to LoudVault
                   </p>
                   <p className="mt-1 text-xs text-[var(--muted)]">
                     Sign in to manage your account and listings.
