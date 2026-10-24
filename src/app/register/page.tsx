@@ -93,7 +93,7 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <h1 className="text-2xl font-semibold text-white">Create account</h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Join LOUDEFOOT to buy, sell and exchange
+            Join LoudVault to buy, sell and exchange game accounts
           </p>
         </div>
 
@@ -187,7 +187,7 @@ export default function RegisterPage() {
               <Link href="/terms" className="text-[var(--primary)] hover:underline">
                 Terms & Conditions
               </Link>{" "}
-              and understand that account transfers and third-party coin services may be restricted by the game publisher.
+              and understand that account transfers and third-party coin services may be restricted by the game publisher, and that accounts can be recovered or banned.
             </span>
           </label>
 
