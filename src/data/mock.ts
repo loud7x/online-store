@@ -126,43 +126,49 @@ export const faqs: FAQ[] = [
     id: "faq-01",
     question: "How does buying an account work?",
     answer:
-      "Browse listings, message the seller on LOUDEFOOT, and pay through our checkout. Your payment is held by LOUDEFOOT, the seller hands over the account, and once you confirm everything is as described, the seller is paid. Never pay a seller outside the platform.",
+      "Browse listings, message the seller on LoudVault, and pay through our checkout. Your payment is held by LoudVault, the seller hands over the account, and once you confirm everything is as described, the seller is paid. Never pay a seller outside the platform.",
   },
   {
     id: "faq-02",
-    question: "Is LOUDEFOOT affiliated with Konami?",
+    question: "Which games does LoudVault support?",
     answer:
-      "No. LOUDEFOOT is an independent marketplace for eFootball account trading and coin loading services. We are not affiliated with, endorsed by, or connected to Konami or eFootball official services.",
+      "LoudVault currently supports eFootball, Free Fire and CODM (Call of Duty: Mobile) accounts. Use the game filter on the Accounts page to see listings for your game.",
   },
   {
     id: "faq-03",
-    question: "How long does coin loading take?",
+    question: "Is LoudVault affiliated with any game publisher?",
     answer:
-      "Most orders are processed within the estimated time shown on each package (usually 15–60 minutes). You will receive status updates and an order reference.",
+      "No. LoudVault is an independent marketplace for game account trading. We are not affiliated with, endorsed by, or connected to Konami, Garena, Activision, TiMi Studio, or any official game service. All game names and trademarks belong to their respective owners.",
   },
   {
     id: "faq-04",
+    question: "How long does coin loading take?",
+    answer:
+      "Coin loading is currently for eFootball. Most orders are processed within the estimated time shown on each package (usually 15–60 minutes). You will receive status updates and an order reference.",
+  },
+  {
+    id: "faq-05",
     question: "Can I exchange accounts?",
     answer:
       "Yes. Use the Exchange Hub to post or browse offers. Both parties must confirm the terms before any exchange is marked complete. No automatic transfers occur without explicit confirmation.",
   },
   {
-    id: "faq-05",
+    id: "faq-06",
     question: "What payment methods are accepted?",
     answer:
       "Payments are processed securely by Paystack. Depending on your bank, you can pay by card, bank transfer, or USSD. We never see or store your card details.",
   },
   {
-    id: "faq-06",
+    id: "faq-07",
     question: "How can I tell if a seller is trustworthy?",
     answer:
       "Tap any seller's name to open their profile. It shows how many accounts they have sold, their active listings, and whether they are verified. If something looks wrong, contact support before you pay.",
   },
   {
-    id: "faq-07",
+    id: "faq-08",
     question: "Are there risks with account trading?",
     answer:
-      "Account transfers and third-party coin services may be restricted by the game publisher or platform terms. Always review the Terms and acknowledge the risks before listing or purchasing. LOUDEFOOT provides tools for safer trading but cannot guarantee zero risk.",
+      "Account transfers and third-party coin services may be restricted by the game publisher or platform terms, and accounts can be recovered or banned by the publisher. Always review the Terms and acknowledge the risks before listing or purchasing. LoudVault provides tools for safer trading but cannot guarantee zero risk.",
   },
 ];
 
