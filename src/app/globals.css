@@ -1,33 +1,32 @@
-
 @import "tailwindcss";
 
 /* =========================================
-   LOUDEFOOT — PREMIUM eFOOTBALL THEME
-   Navy + Electric Blue + Bright Yellow
+   LOUDVAULT — GAME ACCOUNT MARKETPLACE THEME
+   Near-black + Lime
 ========================================= */
 
 :root {
-  --background: #050b24;
-  --foreground: #f5f8ff;
-  --card: #0b1740;
-  --card-hover: #102357;
-  --border: #203a78;
-  --border-subtle: #142754;
-  --muted: #b8c8e8;
-  --muted-foreground: #8498c2;
-  --primary: #174bff;
-  --primary-hover: #0d3bd9;
-  --primary-foreground: #ffffff;
-  --accent: #ffe600;
-  --accent-hover: #fff36b;
-  --accent-foreground: #07102e;
-  --success: #20e58b;
-  --warning: #ffe600;
-  --danger: #ff4565;
-  --blue-glow: rgba(23, 75, 255, 0.3);
-  --yellow-glow: rgba(255, 230, 0, 0.22);
-  --card-gradient: linear-gradient(145deg, #10275d 0%, #081332 100%);
-  --hero-gradient: linear-gradient(135deg, #050b24 0%, #102b79 55%, #06102e 100%);
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #141417;
+  --card-hover: #1c1c21;
+  --border: #2c2c33;
+  --border-subtle: #1f1f24;
+  --muted: #a1a1aa;
+  --muted-foreground: #71717a;
+  --primary: #a3e635;
+  --primary-hover: #bef264;
+  --primary-foreground: #142003;
+  --accent: #a3e635;
+  --accent-hover: #bef264;
+  --accent-foreground: #142003;
+  --success: #22c55e;
+  --warning: #facc15;
+  --danger: #ef4444;
+  --blue-glow: rgba(163, 230, 53, 0.22);
+  --yellow-glow: rgba(163, 230, 53, 0.18);
+  --card-gradient: linear-gradient(145deg, #17171b 0%, #101013 100%);
+  --hero-gradient: linear-gradient(135deg, #09090b 0%, #14171a 55%, #09090b 100%);
   --radius: 0.85rem;
 }
 
@@ -105,7 +104,7 @@ button {
 }
 
 ::selection {
-  background: rgba(23, 75, 255, 0.5);
+  background: rgba(163, 230, 53, 0.35);
   color: #ffffff;
 }
 
@@ -126,12 +125,12 @@ button {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #25458e;
+  background: #2c2c33;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3768dc;
+  background: #45454f;
 }
 
 /* CONTAINER AND SECTIONS */
@@ -183,9 +182,9 @@ button {
 
 .card-hover:hover {
   transform: translateY(-3px);
-  border-color: #3568ff;
+  border-color: var(--primary);
   background-color: var(--card-hover);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
 .premium-card {
@@ -204,7 +203,7 @@ button {
   box-shadow: 0 8px 28px var(--blue-glow);
 }
 
-/* PREMIUM BUTTONS */
+/* BUTTONS */
 
 .btn {
   display: inline-flex;
@@ -230,26 +229,27 @@ button {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #fff000 0%, #ffd500 100%);
-  color: #07102e;
-  border: 1px solid #fff36b;
-  box-shadow: 0 4px 18px rgba(255, 230, 0, 0.18);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+  box-shadow: 0 4px 18px rgba(163, 230, 53, 0.15);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #fff75a 0%, #ffe000 100%);
-  box-shadow: 0 6px 24px rgba(255, 230, 0, 0.3);
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  box-shadow: 0 6px 24px rgba(163, 230, 53, 0.25);
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, #10275d 0%, #0a1740 100%);
+  background: var(--card);
   color: #ffffff;
-  border: 1px solid #2860ff;
+  border: 1px solid var(--border);
 }
 
 .btn-secondary:hover {
-  background: #173578;
-  border-color: var(--accent);
+  background: var(--card-hover);
+  border-color: var(--primary);
 }
 
 .btn-ghost {
@@ -260,7 +260,7 @@ button {
 
 .btn-ghost:hover {
   color: #ffffff;
-  background: rgba(35, 84, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* BADGES */
@@ -277,13 +277,13 @@ button {
 }
 
 .badge-verified {
-  color: #20e58b;
-  background: rgba(32, 229, 139, 0.1);
-  border-color: rgba(32, 229, 139, 0.25);
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.25);
 }
 
 .badge-featured {
-  color: #07102e;
+  color: var(--primary-foreground);
   background: var(--accent);
 }
 
@@ -292,9 +292,9 @@ button {
 .text-gradient {
   background: linear-gradient(
     135deg,
-    #fff36b 0%,
-    #ffe600 35%,
-    #5c91ff 100%
+    #d9f99d 0%,
+    #a3e635 50%,
+    #84cc16 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -390,7 +390,7 @@ select:focus {
 }
 
 /* =========================================
-   PREMIUM MOBILE BOTTOM NAVIGATION
+   MOBILE BOTTOM NAVIGATION
 ========================================= */
 
 .mobile-bottom-nav {
@@ -409,9 +409,9 @@ select:focus {
     align-items: center;
     min-height: 68px;
     padding: 8px 5px calc(8px + env(safe-area-inset-bottom, 0px));
-    background: rgba(5, 11, 36, 0.97);
-    border-top: 1px solid #203a78;
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.28);
+    background: rgba(9, 9, 11, 0.97);
+    border-top: 1px solid #2c2c33;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(18px);
   }
 
@@ -423,7 +423,7 @@ select:focus {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    color: #8498c2;
+    color: #71717a;
     text-decoration: none;
     font-size: 10px;
     font-weight: 600;
@@ -445,7 +445,7 @@ select:focus {
   }
 
   .mobile-nav-item.active {
-    color: #ffe600;
+    color: #a3e635;
   }
 
   .mobile-nav-sell .mobile-nav-icon {
@@ -453,11 +453,11 @@ select:focus {
     height: 32px;
     min-height: 32px;
     border-radius: 11px;
-    background: #ffe600;
-    color: #07102e;
+    background: #a3e635;
+    color: #142003;
     font-size: 25px;
     font-weight: 800;
-    box-shadow: 0 0 18px rgba(255, 230, 0, 0.2);
+    box-shadow: 0 0 18px rgba(163, 230, 53, 0.2);
   }
 
   body {
