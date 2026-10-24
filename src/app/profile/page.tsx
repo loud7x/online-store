@@ -67,7 +67,7 @@ export default function ProfilePage() {
 
         <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-8">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary)] text-2xl font-extrabold text-white">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary)] text-2xl font-extrabold text-[var(--primary-foreground)]">
               {email ? email.charAt(0).toUpperCase() : "L"}
             </div>
             <div className="min-w-0">
@@ -90,21 +90,21 @@ export default function ProfilePage() {
               <>
                 <Link
                   href="/my-listings"
-                  className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[#101d43] p-4 text-sm font-semibold text-white transition hover:border-[var(--primary)]"
+                  className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm font-semibold text-white transition hover:border-[var(--primary)]"
                 >
                   <span>My Listings</span>
                   <span className="text-[var(--accent)]">→</span>
                 </Link>
                 <Link
                   href="/sell"
-                  className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[#101d43] p-4 text-sm font-semibold text-white transition hover:border-[var(--primary)]"
+                  className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm font-semibold text-white transition hover:border-[var(--primary)]"
                 >
                   <span>Sell an Account</span>
                   <span className="text-[var(--accent)]">→</span>
                 </Link>
                 <Link
                   href="/accounts"
-                  className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[#101d43] p-4 text-sm font-semibold text-white transition hover:border-[var(--primary)]"
+                  className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm font-semibold text-white transition hover:border-[var(--primary)]"
                 >
                   <span>Browse Accounts</span>
                   <span className="text-[var(--accent)]">→</span>
