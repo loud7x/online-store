@@ -10,6 +10,12 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const GAMES = [
+  { slug: "efootball", name: "eFootball", tagline: "Player cards, coins & squads" },
+  { slug: "freefire", name: "Free Fire", tagline: "Diamonds, skins & ranks" },
+  { slug: "codm", name: "CODM", tagline: "Levels, CP & legendary guns" },
+];
+
 function toAccount(listing: any, imageUrl: string | null) {
   return {
     ...listing,
@@ -84,15 +90,15 @@ export default async function HomePage() {
         <div className="container-main pt-7 pb-8 md:pt-16 md:pb-16">
           <div className="mx-auto max-w-3xl text-center">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)] sm:text-sm">
-              LOUDEFOOT · eFootball Marketplace
+              LoudVault · Game Account Marketplace
             </p>
             <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
-              YOUR NEXT eFOOTBALL ACCOUNT{" "}
+              YOUR NEXT GAME ACCOUNT{" "}
               <span className="text-gradient">STARTS HERE.</span>
             </h1>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[var(--muted)] sm:text-base md:text-lg">
-              Buy, sell and exchange eFootball accounts. Browse real listings
-              and contact sellers directly.
+              Buy, sell and exchange eFootball, Free Fire and CODM accounts.
+              Browse real listings from sellers across Nigeria.
             </p>
             <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-center">
               <Link
@@ -118,6 +124,37 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Shop by Game */}
+      <section className="section-padding pt-0 md:pt-4">
+        <div className="container-main">
+          <div className="mb-5 sm:mb-8">
+            <h2 className="text-xl font-bold text-white sm:text-2xl">
+              Shop by Game
+            </h2>
+            <p className="mt-1 text-xs text-[var(--muted)] sm:text-sm">
+              Pick a game to see its accounts
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5">
+            {GAMES.map((game) => (
+              <Link
+                key={game.slug}
+                href={`/accounts?game=${game.slug}`}
+                className="group rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 transition hover:border-[var(--primary)] sm:p-6"
+              >
+                <h3 className="text-lg font-bold text-white">{game.name}</h3>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  {game.tagline}
+                </p>
+                <span className="mt-4 inline-block text-sm font-semibold text-[var(--primary)] group-hover:underline">
+                  Browse {game.name} →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Recently Added */}
       <section className="section-padding pt-5 md:pt-10">
         <div className="container-main">
@@ -127,7 +164,7 @@ export default async function HomePage() {
                 Recently Added
               </h2>
               <p className="mt-1 text-xs text-[var(--muted)] sm:text-sm">
-                Fresh eFootball accounts from sellers
+                Fresh game accounts from sellers
               </p>
             </div>
             <Link
@@ -147,7 +184,7 @@ export default async function HomePage() {
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 text-center sm:p-8">
               <p className="font-semibold text-white">No listings yet</p>
               <p className="mt-1 text-sm text-[var(--muted)]">
-                Be the first to sell an eFootball account.
+                Be the first to sell a game account.
               </p>
               <Link
                 href="/sell"
@@ -169,7 +206,7 @@ export default async function HomePage() {
                 Best-Value Deals
               </h2>
               <p className="mb-6 text-sm text-[var(--muted)]">
-                Discover eFootball accounts at competitive prices.
+                Discover game accounts at competitive prices.
               </p>
               <Link
                 href="/accounts?sort=value"
@@ -197,15 +234,16 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* How LOUDEFOOT Works */}
+      {/* How LoudVault Works */}
       <section className="section-padding">
         <div className="container-main">
           <div className="mx-auto mb-8 max-w-xl text-center sm:mb-10">
             <h2 className="text-xl font-semibold text-white sm:text-2xl">
-              Simple. Direct. Convenient.
+              Simple. Safe. Convenient.
             </h2>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Find your account on LOUDEFOOT and contact the seller directly.
+              Find your account on LoudVault and chat with the seller on the
+              platform.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
@@ -213,21 +251,22 @@ export default async function HomePage() {
               <h3 className="font-semibold text-white">1. Browse</h3>
               <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
                 Explore available accounts, photos, videos, prices and account
-                status.
+                status for your favourite game.
               </p>
             </div>
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6">
-              <h3 className="font-semibold text-white">2. Contact</h3>
+              <h3 className="font-semibold text-white">2. Chat</h3>
               <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
-                View the seller&apos;s contact details, chat on WhatsApp, or
-                call directly.
+                Message the seller on LoudVault to ask questions and confirm
+                the account details.
               </p>
             </div>
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6">
-              <h3 className="font-semibold text-white">3. Arrange Your Deal</h3>
+              <h3 className="font-semibold text-white">3. Pay Securely</h3>
               <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
-                Discuss the terms directly with the seller before proceeding
-                with any payment or account transfer.
+                Pay through LoudVault checkout. Your payment is held until you
+                confirm the account is as described. Never pay outside the
+                platform.
               </p>
             </div>
           </div>
