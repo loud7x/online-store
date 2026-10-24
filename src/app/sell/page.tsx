@@ -3,7 +3,40 @@
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+const GAMES = {
+  eFootball: {
+    label: "eFootball",
+    titleLabel: "Paid or demand cards",
+    titlePlaceholder: "e.g. Epic cards, Big Time cards",
+    statusPlaceholder:
+      "e.g. Link deleted, Only KONAMI link, Double link, Link safe, Google Play login only, Game Center login",
+    detailsPlaceholder:
+      "Describe the account, player cards, team strength, and other features.",
+  },
+  "Free Fire": {
+    label: "Free Fire",
+    titleLabel: "Account highlights",
+    titlePlaceholder: "e.g. Level 70, Elite Pass, rare bundles",
+    statusPlaceholder:
+      "e.g. Facebook linked, Google linked, VK linked, Guest account, Link deleted",
+    detailsPlaceholder:
+      "Describe the account level, rank, diamonds, skins, bundles, characters, and other features.",
+  },
+  CODM: {
+    label: "CODM",
+    titleLabel: "Account highlights",
+    titlePlaceholder: "e.g. Legendary guns, Level 150, Mythic skins",
+    statusPlaceholder:
+      "e.g. Facebook linked, Garena linked, Activision linked, Google Play login only",
+    detailsPlaceholder:
+      "Describe the account level, rank, CP, legendary or mythic guns, operators, skins, and other features.",
+  },
+} as const;
+
+type GameKey = keyof typeof GAMES;
+
 export default function SellPage() {
+  const [game, setGame] = useState<GameKey>("eFootball");
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
@@ -18,6 +51,8 @@ export default function SellPage() {
   const [loading, setLoading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  const config = GAMES[game];
 
   function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -88,7 +123,7 @@ export default function SellPage() {
     }
 
     if (!image) {
-      setMessage("Please upload a picture of your eFootball account.");
+      setMessage(`Please upload a picture of your ${config.label} account.`);
       return;
     }
 
@@ -145,7 +180,7 @@ export default function SellPage() {
 
       const { error: insertError } = await supabase.from("listings").insert({
         user_id: userId,
-        game: "eFootball",
+        game: game,
         title: title.trim(),
         price: Number(price),
         // images is an array of storage paths; the picture goes first
@@ -162,7 +197,7 @@ export default function SellPage() {
         throw new Error(`Listing could not be saved: ${insertError.message}`);
       }
 
-      setMessage("Success! Your eFootball account listing has been saved to Supabase.");
+      setMessage(`Success! Your ${config.label} account listing has been saved.`);
     } catch (error) {
       if (uploadedImagePath || uploadedVideoPath) {
         const paths = [uploadedImagePath, uploadedVideoPath].filter(
@@ -186,10 +221,10 @@ export default function SellPage() {
       <div className="mx-auto max-w-2xl">
         <div className="mb-8">
           <p className="text-sm font-semibold uppercase tracking-widest text-[var(--primary)]">
-            LOUDEFOOT Marketplace
+            LoudVault Marketplace
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">
-            Sell Your eFootball Account
+            Sell Your {config.label} Account
           </h1>
           <p className="mt-3 text-[var(--muted)]">
             Add your account details, price, pictures, video, and login-link status.
@@ -202,13 +237,35 @@ export default function SellPage() {
         >
           <div>
             <label className="mb-2 block text-sm font-medium text-white">
-              Paid or demand cards
+              Game
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.keys(GAMES) as GameKey[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setGame(key)}
+                  className={`rounded-lg border p-3 text-sm font-semibold transition ${
+                    game === key
+                      ? "border-[var(--primary)] bg-[var(--primary)]/10 text-white"
+                      : "border-[var(--border)] bg-black text-[var(--muted)] hover:border-[var(--primary)]"
+                  }`}
+                >
+                  {GAMES[key].label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-white">
+              {config.titleLabel}
             </label>
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               maxLength={100}
-              placeholder="e.g. Epic cards, Big Time cards"
+              placeholder={config.titlePlaceholder}
               required
               className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white"
             />
@@ -268,7 +325,7 @@ export default function SellPage() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={imagePreview}
-                  alt="Preview of the eFootball account"
+                  alt={`Preview of the ${config.label} account`}
                   className="max-h-72 w-full rounded-lg object-contain"
                 />
               ) : (
@@ -364,7 +421,7 @@ export default function SellPage() {
               onChange={(event) => setAccountStatus(event.target.value)}
               maxLength={160}
               required
-              placeholder="e.g. Link deleted, Only KONAMI link, Double link, Link safe, Google Play login only, Game Center login"
+              placeholder={config.statusPlaceholder}
               className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white placeholder:text-[var(--muted)]"
             />
             <p className="mt-1 text-xs text-[var(--muted)]">
@@ -394,7 +451,7 @@ export default function SellPage() {
               value={accountDetails}
               onChange={(event) => setAccountDetails(event.target.value)}
               maxLength={2000}
-              placeholder="Describe the account, player cards, team strength, and other features."
+              placeholder={config.detailsPlaceholder}
               required
               rows={4}
               className="w-full rounded-lg border border-[var(--border)] bg-black p-3 text-white"
