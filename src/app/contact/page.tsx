@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Contact Us" };
 
 // ---- Fill these in. Leave a value empty ("") to hide it. ----
 const SUPPORT_WHATSAPP = ""; // digits only, e.g. "2349138948073"
-const SUPPORT_EMAIL = ""; // e.g. "support@loudvault.com"
+const SUPPORT_EMAIL = ""; // e.g. "support@loudefoot@gmail.com"
 const INSTAGRAM_URL = "https://instagram.com/loud7x_";
 // ---------------------------------------------------------------
 
