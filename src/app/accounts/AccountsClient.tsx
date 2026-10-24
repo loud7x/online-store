@@ -11,6 +11,7 @@ type Listing = {
   user_id: string;
   title: string;
   price: number;
+  game: string | null;
   images: string[] | null;
   account_status: string | null;
   status: "active" | "pending" | "sold" | "archived" | null;
@@ -23,6 +24,13 @@ type Seller = {
   is_verified: boolean | null;
   rating: number | null;
 };
+
+// URL slug -> name stored in the database
+const GAME_FILTERS = [
+  { slug: "efootball", name: "eFootball" },
+  { slug: "freefire", name: "Free Fire" },
+  { slug: "codm", name: "CODM" },
+];
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -37,6 +45,8 @@ export default function AccountsClient() {
   const search = searchParams.get("search") || "";
   const sort = searchParams.get("sort") || "newest";
   const verifiedOnly = searchParams.get("verified") === "true";
+  const gameSlug = searchParams.get("game") || "";
+  const activeGame = GAME_FILTERS.find((g) => g.slug === gameSlug) ?? null;
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [sellers, setSellers] = useState<Record<string, Seller>>({});
@@ -44,13 +54,19 @@ export default function AccountsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  function makeHref(overrides: { sort?: string; verified?: boolean }) {
+  function makeHref(overrides: {
+    sort?: string;
+    verified?: boolean;
+    game?: string;
+  }) {
     const nextSort = overrides.sort ?? sort;
     const nextVerified = overrides.verified ?? verifiedOnly;
+    const nextGame = overrides.game ?? gameSlug;
     const p = new URLSearchParams();
     if (search.trim()) p.set("search", search.trim());
     if (nextSort !== "newest") p.set("sort", nextSort);
     if (nextVerified) p.set("verified", "true");
+    if (nextGame) p.set("game", nextGame);
     const qs = p.toString();
     return qs ? `/accounts?${qs}` : "/accounts";
   }
@@ -93,10 +109,15 @@ export default function AccountsClient() {
         let query = supabase
           .from("listings")
           .select(
-            "id, user_id, title, price, images, account_status, status, created_at"
+            "id, user_id, title, price, game, images, account_status, status, created_at"
           )
           .eq("status", "active")
           .order("created_at", { ascending: false });
+
+        if (activeGame) {
+          // ilike without wildcards = case-insensitive exact match
+          query = query.ilike("game", activeGame.name);
+        }
 
         if (search.trim()) {
           query = query.ilike("title", `%${search.trim()}%`);
@@ -164,7 +185,7 @@ export default function AccountsClient() {
     return () => {
       cancelled = true;
     };
-  }, [search, sort, verifiedOnly]);
+  }, [search, sort, verifiedOnly, activeGame?.name]);
 
   let filteredListings = verifiedOnly
     ? listings.filter((l) => sellers[l.user_id]?.is_verified)
@@ -188,13 +209,30 @@ export default function AccountsClient() {
 
   return (
     <main className="container-main section-padding">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-white sm:text-3xl">
-          Browse Accounts
+          {activeGame ? `${activeGame.name} Accounts` : "Browse Accounts"}
         </h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          Premium eFootball accounts. Look for the Verified Vendor badge.
+          Premium {activeGame ? activeGame.name : "game"} accounts. Look for
+          the Verified Vendor badge.
         </p>
+      </div>
+
+      {/* Game filter */}
+      <div className="mb-5 flex gap-2 overflow-x-auto">
+        <Link href={makeHref({ game: "" })} className={chipClass(!activeGame)}>
+          All Games
+        </Link>
+        {GAME_FILTERS.map((g) => (
+          <Link
+            key={g.slug}
+            href={makeHref({ game: g.slug })}
+            className={chipClass(activeGame?.slug === g.slug)}
+          >
+            {g.name}
+          </Link>
+        ))}
       </div>
 
       {/* Search + Filters */}
@@ -206,11 +244,14 @@ export default function AccountsClient() {
           {verifiedOnly && (
             <input type="hidden" name="verified" value="true" />
           )}
+          {activeGame && (
+            <input type="hidden" name="game" value={activeGame.slug} />
+          )}
           <input
             type="text"
             name="search"
             defaultValue={search}
-            placeholder="Search by title (e.g. Blitz, Messi...)"
+            placeholder="Search by title (e.g. Blitz, Elite Pass...)"
             className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm text-white outline-none focus:border-[var(--primary)]"
           />
         </form>
@@ -260,7 +301,9 @@ export default function AccountsClient() {
           <p className="text-white">
             {verifiedOnly
               ? "No verified vendor listings found."
-              : "No accounts found."}
+              : activeGame
+                ? `No ${activeGame.name} accounts found.`
+                : "No accounts found."}
           </p>
           <Link
             href="/accounts"
@@ -295,6 +338,11 @@ export default function AccountsClient() {
                     <div className="flex h-full items-center justify-center text-sm text-[var(--muted)]">
                       No image
                     </div>
+                  )}
+                  {listing.game && (
+                    <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-xs font-semibold text-white">
+                      {listing.game}
+                    </span>
                   )}
                 </div>
 
@@ -336,4 +384,3 @@ export default function AccountsClient() {
     </main>
   );
 }
-
