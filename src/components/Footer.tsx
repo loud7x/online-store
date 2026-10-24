@@ -1,7 +1,7 @@
 import Link from "next/link";
 // ---- Fill these in. Leave a value empty ("") to hide it. ----
 const SUPPORT_WHATSAPP = ""; // digits only, e.g. "2349138948073"
-const SUPPORT_EMAIL = ""; // e.g. "loudefoot@gmail.com"
+const SUPPORT_EMAIL = ""; // e.g. "loudvault@gmail.com"
 const socialLinks = [
   { label: "Instagram", href: "https://instagram.com/loud7x_" },
 ].filter((item) => item.href);
@@ -9,6 +9,9 @@ const socialLinks = [
 const footerLinks = {
   marketplace: [
     { href: "/accounts", label: "Browse Accounts" },
+    { href: "/accounts?game=efootball", label: "eFootball Accounts" },
+    { href: "/accounts?game=freefire", label: "Free Fire Accounts" },
+    { href: "/accounts?game=codm", label: "CODM Accounts" },
     { href: "/sell", label: "Sell an Account" },
     { href: "/exchange", label: "Exchange Hub" },
     { href: "/coins", label: "Coin Loading" },
@@ -35,18 +38,20 @@ export default function Footer() {
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)] text-white font-bold text-sm">
-                LF
+                LV
               </div>
               <span className="text-lg font-semibold tracking-tight">
-                LOUDE<span className="text-[var(--primary)]">FOOT</span>
+                Loud<span className="text-[var(--primary)]">Vault</span>
               </span>
             </Link>
             <p className="text-sm text-[var(--muted)] leading-relaxed max-w-xs">
-              Premium eFootball account marketplace. Buy, sell, exchange
-              accounts and load coins — all in one place.
+              Premium game account marketplace. Buy, sell and exchange
+              eFootball, Free Fire and CODM accounts — all in one place.
             </p>
             <p className="mt-4 text-xs text-[var(--muted-foreground)]">
-              Independent platform. Not affiliated with Konami or eFootball.
+              Independent platform. Not affiliated with Konami, Garena,
+              Activision or TiMi Studio. All game names and trademarks belong
+              to their respective owners.
             </p>
             {(whatsappDigits || SUPPORT_EMAIL) && (
               <div className="mt-5 space-y-2 text-sm">
@@ -141,7 +146,7 @@ export default function Footer() {
         </div>
         <div className="mt-12 pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[var(--muted-foreground)]">
-            © LOUDEFOOT. All rights reserved.
+            © LoudVault. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
             <span>Nigeria · ₦ NGN</span>
