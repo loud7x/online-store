@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { Turnstile } from "@marsidev/react-turnstile";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
@@ -11,6 +13,8 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -23,6 +27,7 @@ export default function ForgotPasswordPage() {
       const { error: resetError } =
         await supabase.auth.resetPasswordForEmail(email.trim(), {
           redirectTo: redirectUrl,
+          captchaToken,
         });
 
       if (resetError) {
@@ -38,6 +43,9 @@ export default function ForgotPasswordPage() {
         "Something went wrong. Please check your internet connection and try again."
       );
     } finally {
+      // Captcha tokens are single-use, so get a fresh one
+      turnstileRef.current?.reset();
+      setCaptchaToken("");
       setLoading(false);
     }
   }
@@ -100,9 +108,16 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+              onSuccess={setCaptchaToken}
+              onExpire={() => setCaptchaToken("")}
+            />
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !captchaToken}
               className="btn btn-primary w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Sending Reset Link..." : "Send Reset Link"}
