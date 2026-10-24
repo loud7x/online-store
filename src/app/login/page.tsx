@@ -59,7 +59,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Log in to your LOUDEFOOT account
+            Log in to your LoudVault account
           </p>
         </div>
 
