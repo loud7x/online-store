@@ -25,7 +25,7 @@ export default function AccountCard({ account }: AccountCardProps) {
 
   const sellerInfo = (
     <>
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#142653] text-[9px] font-bold text-white sm:h-6 sm:w-6 sm:text-[10px]">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--border)] text-[9px] font-bold text-white sm:h-6 sm:w-6 sm:text-[10px]">
         {sellerName.slice(0, 2).toUpperCase()}
       </span>
       <span className="max-w-[90px] truncate text-[11px] font-medium text-[var(--muted)] sm:max-w-[120px] sm:text-xs">
@@ -35,7 +35,7 @@ export default function AccountCard({ account }: AccountCardProps) {
   );
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-[#20376b] bg-[#0b1740] transition-colors hover:border-[var(--accent)] sm:rounded-2xl">
+    <div className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] transition-colors hover:border-[var(--accent)] sm:rounded-2xl">
       <Link
         href={`/accounts/${account.id}`}
         className="absolute inset-0 z-10 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--accent)] sm:rounded-2xl"
@@ -44,7 +44,7 @@ export default function AccountCard({ account }: AccountCardProps) {
 
       {/* Account Image (tap to enlarge) */}
       <div
-        className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-[#142653] via-[#0b1740] to-[#050b24] sm:aspect-[16/10] ${
+        className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-[var(--border)] via-[var(--card)] to-[var(--background)] sm:aspect-[16/10] ${
           imageUrl ? "z-20 cursor-zoom-in" : ""
         }`}
         onClick={imageUrl ? () => setViewerOpen(true) : undefined}
@@ -57,7 +57,7 @@ export default function AccountCard({ account }: AccountCardProps) {
               loading="lazy"
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050b24]/80 via-transparent to-black/15" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)]/80 via-transparent to-black/15" />
           </>
         ) : (
           <div className="p-3 text-center sm:p-4">
@@ -66,7 +66,7 @@ export default function AccountCard({ account }: AccountCardProps) {
                 ? account.teamStrength
                 : gameName}
             </div>
-            <div className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-[#a7b8df] sm:text-xs">
+            <div className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--muted)] sm:text-xs">
               {isEfootball && account.teamStrength
                 ? "Team Strength"
                 : "Account"}
@@ -74,16 +74,16 @@ export default function AccountCard({ account }: AccountCardProps) {
           </div>
         )}
         {account.isFeatured && (
-          <span className="absolute left-2 top-2 rounded-md border border-white/10 bg-[#174bff]/95 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white sm:left-3 sm:top-3 sm:text-[10px]">
+          <span className="absolute left-2 top-2 rounded-md bg-[var(--primary)] px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-[var(--primary-foreground)] sm:left-3 sm:top-3 sm:text-[10px]">
             Featured
           </span>
         )}
         {account.isBestValue && (
-          <span className="absolute right-2 top-2 rounded-md bg-[#ffe600] px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-[#07102e] sm:right-3 sm:top-3 sm:text-[10px]">
+          <span className="absolute right-2 top-2 rounded-md bg-[#facc15] px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-[#1f1700] sm:right-3 sm:top-3 sm:text-[10px]">
             Best Value
           </span>
         )}
-        <span className="absolute bottom-2 left-2 rounded-md border border-white/10 bg-[#050b24]/85 px-2 py-1 text-[9px] font-semibold text-white backdrop-blur-sm sm:bottom-3 sm:left-3 sm:text-[10px]">
+        <span className="absolute bottom-2 left-2 rounded-md border border-white/10 bg-[var(--background)]/85 px-2 py-1 text-[9px] font-semibold text-white backdrop-blur-sm sm:bottom-3 sm:left-3 sm:text-[10px]">
           {gameName}
         </span>
       </div>
@@ -125,19 +125,19 @@ export default function AccountCard({ account }: AccountCardProps) {
           </p>
         </div>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px] text-[#a7b8df] sm:gap-x-3 sm:text-xs">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px] text-[var(--muted)] sm:gap-x-3 sm:text-xs">
           {account.platform && (
-            <span className="rounded bg-[#142653] px-1.5 py-1">
+            <span className="rounded bg-[var(--border)] px-1.5 py-1">
               {account.platform}
             </span>
           )}
           {showOvr && (
-            <span className="rounded bg-[#142653] px-1.5 py-1">
+            <span className="rounded bg-[var(--border)] px-1.5 py-1">
               OVR {account.overallRating}
             </span>
           )}
           {isEfootball && (account.epicPlayers ?? 0) > 0 && (
-            <span className="rounded bg-[#142653] px-1.5 py-1">
+            <span className="rounded bg-[var(--border)] px-1.5 py-1">
               {account.epicPlayers} Epic
             </span>
           )}
@@ -155,7 +155,7 @@ export default function AccountCard({ account }: AccountCardProps) {
         )}
 
         {/* Seller Information */}
-        <div className="flex min-w-0 items-center justify-between gap-1 border-t border-[#20376b] pt-2">
+        <div className="flex min-w-0 items-center justify-between gap-1 border-t border-[var(--border)] pt-2">
           {sellerId ? (
             <Link
               href={`/sellers/${sellerId}`}
