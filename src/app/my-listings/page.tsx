@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -9,6 +8,7 @@ type Listing = {
   id: string;
   title: string;
   price: number;
+  game: string | null;
   status: string | null;
   listing_status: string | null;
   created_at: string;
@@ -41,7 +41,9 @@ export default function MyListingsPage() {
 
     const { data, error } = await supabase
       .from("listings")
-      .select("id, title, price, status, listing_status, created_at, images")
+      .select(
+        "id, title, price, game, status, listing_status, created_at, images"
+      )
       .eq("user_id", authData.user.id)
       .order("created_at", { ascending: false });
 
@@ -139,7 +141,7 @@ export default function MyListingsPage() {
           <div>
             <h1 className="text-3xl font-bold text-white">My Listings</h1>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Manage your eFootball accounts on LOUDEFOOT.
+              Manage your game accounts on LoudVault.
             </p>
           </div>
 
@@ -206,6 +208,11 @@ export default function MyListingsPage() {
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
+                        {listing.game && (
+                          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
+                            {listing.game}
+                          </p>
+                        )}
                         <h2 className="text-lg font-semibold text-white">
                           {listing.title}
                         </h2>
