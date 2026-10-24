@@ -37,7 +37,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)] text-white font-bold text-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] font-bold text-sm">
                 LV
               </div>
               <span className="text-lg font-semibold tracking-tight">
