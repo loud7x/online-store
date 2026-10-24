@@ -8,10 +8,18 @@ interface ExchangeCardProps {
 
 export default function ExchangeCard({ offer }: ExchangeCardProps) {
   const typeColors: Record<string, string> = {
-    Equal: "bg-[var(--accent)]",
-    Upgrade: "bg-[var(--primary)]",
-    Downgrade: "bg-[var(--muted-foreground)]",
+    Equal: "bg-[var(--accent)] text-[var(--primary-foreground)]",
+    Upgrade: "bg-[var(--primary)] text-[var(--primary-foreground)]",
+    Downgrade: "bg-[var(--border)] text-white",
   };
+
+  const details = [
+    offer.platform,
+    offer.teamStrength > 0 ? `TS ${offer.teamStrength}` : null,
+    `Est. ${formatNaira(offer.estimatedValue)}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <Link
@@ -21,20 +29,26 @@ export default function ExchangeCard({ offer }: ExchangeCardProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-medium text-white line-clamp-2">{offer.title}</h3>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            {offer.platform} · TS {offer.teamStrength} · Est. {formatNaira(offer.estimatedValue)}
-          </p>
+          <p className="mt-1 text-sm text-[var(--muted)]">{details}</p>
         </div>
-        <span className={`badge text-white shrink-0 ${typeColors[offer.exchangeType] || "bg-[var(--accent)]"}`}>
+        <span
+          className={`badge shrink-0 ${
+            typeColors[offer.exchangeType] ||
+            "bg-[var(--accent)] text-[var(--primary-foreground)]"
+          }`}
+        >
           {offer.exchangeType}
         </span>
       </div>
 
-      <p className="mt-3 text-sm text-[var(--muted)] line-clamp-2">{offer.description}</p>
+      <p className="mt-3 text-sm text-[var(--muted)] line-clamp-2">
+        {offer.description}
+      </p>
 
       {offer.preferred && (
         <p className="mt-2 text-xs text-[var(--muted-foreground)]">
-          Looking for: <span className="text-[var(--muted)]">{offer.preferred}</span>
+          Looking for:{" "}
+          <span className="text-[var(--muted)]">{offer.preferred}</span>
         </p>
       )}
 
@@ -45,11 +59,13 @@ export default function ExchangeCard({ offer }: ExchangeCardProps) {
       )}
 
       <div className="mt-4 flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
-        <div className="h-6 w-6 rounded-full bg-[var(--accent)] flex items-center justify-center text-[10px] font-medium text-white">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-medium text-[var(--primary-foreground)]">
           {offer.seller.username.slice(0, 2).toUpperCase()}
         </div>
         <span>{offer.seller.username}</span>
-        {offer.seller.verified && <span className="text-[var(--primary)]">✓</span>}
+        {offer.seller.verified && (
+          <span className="text-[var(--primary)]">✓</span>
+        )}
         <span>· ★ {offer.seller.rating}</span>
       </div>
     </Link>
