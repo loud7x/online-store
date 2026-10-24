@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { MdVerified } from "react-icons/md";
 import { createClient } from "@/lib/supabase/client";
 
 type Listing = {
@@ -42,6 +43,17 @@ export default function AccountsClient() {
   const [imageUrls, setImageUrls] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  function makeHref(overrides: { sort?: string; verified?: boolean }) {
+    const nextSort = overrides.sort ?? sort;
+    const nextVerified = overrides.verified ?? verifiedOnly;
+    const p = new URLSearchParams();
+    if (search.trim()) p.set("search", search.trim());
+    if (nextSort !== "newest") p.set("sort", nextSort);
+    if (nextVerified) p.set("verified", "true");
+    const qs = p.toString();
+    return qs ? `/accounts?${qs}` : "/accounts";
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -154,9 +166,25 @@ export default function AccountsClient() {
     };
   }, [search, sort, verifiedOnly]);
 
-  const filteredListings = verifiedOnly
+  let filteredListings = verifiedOnly
     ? listings.filter((l) => sellers[l.user_id]?.is_verified)
     : listings;
+
+  // On the default "newest" view, show verified sellers first
+  if (!verifiedOnly && sort === "newest") {
+    filteredListings = [...filteredListings].sort((a, b) => {
+      const av = sellers[a.user_id]?.is_verified ? 1 : 0;
+      const bv = sellers[b.user_id]?.is_verified ? 1 : 0;
+      return bv - av;
+    });
+  }
+
+  const chipClass = (active: boolean) =>
+    `whitespace-nowrap rounded-lg px-4 py-2 text-sm ${
+      active
+        ? "bg-[var(--primary)] text-black"
+        : "border border-[var(--border)] text-[var(--muted)]"
+    }`;
 
   return (
     <main className="container-main section-padding">
@@ -165,13 +193,19 @@ export default function AccountsClient() {
           Browse Accounts
         </h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          Premium eFootball accounts from verified sellers
+          Premium eFootball accounts. Look for the Verified Vendor badge.
         </p>
       </div>
 
       {/* Search + Filters */}
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
         <form className="flex-1" action="/accounts" method="get">
+          {sort !== "newest" && (
+            <input type="hidden" name="sort" value={sort} />
+          )}
+          {verifiedOnly && (
+            <input type="hidden" name="verified" value="true" />
+          )}
           <input
             type="text"
             name="search"
@@ -183,44 +217,28 @@ export default function AccountsClient() {
 
         <div className="flex gap-2 overflow-x-auto">
           <Link
-            href="/accounts"
-            className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm ${
-              !sort && !verifiedOnly
-                ? "bg-[var(--primary)] text-black"
-                : "border border-[var(--border)] text-[var(--muted)]"
-            }`}
+            href={makeHref({ sort: "newest" })}
+            className={chipClass(sort === "newest")}
           >
             Newest
           </Link>
           <Link
-            href="/accounts?sort=price_low"
-            className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm ${
-              sort === "price_low"
-                ? "bg-[var(--primary)] text-black"
-                : "border border-[var(--border)] text-[var(--muted)]"
-            }`}
+            href={makeHref({ sort: "price_low" })}
+            className={chipClass(sort === "price_low")}
           >
             Price: Low
           </Link>
           <Link
-            href="/accounts?sort=price_high"
-            className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm ${
-              sort === "price_high"
-                ? "bg-[var(--primary)] text-black"
-                : "border border-[var(--border)] text-[var(--muted)]"
-            }`}
+            href={makeHref({ sort: "price_high" })}
+            className={chipClass(sort === "price_high")}
           >
             Price: High
           </Link>
           <Link
-            href="/accounts?verified=true"
-            className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm ${
-              verifiedOnly
-                ? "bg-[var(--primary)] text-black"
-                : "border border-[var(--border)] text-[var(--muted)]"
-            }`}
+            href={makeHref({ verified: !verifiedOnly })}
+            className={`inline-flex items-center gap-1 ${chipClass(verifiedOnly)}`}
           >
-            Verified Only
+            <MdVerified className="h-4 w-4" /> Verified Only
           </Link>
         </div>
       </div>
@@ -239,7 +257,11 @@ export default function AccountsClient() {
 
       {!loading && !error && filteredListings.length === 0 && (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-12 text-center">
-          <p className="text-white">No accounts found.</p>
+          <p className="text-white">
+            {verifiedOnly
+              ? "No verified vendor listings found."
+              : "No accounts found."}
+          </p>
           <Link
             href="/accounts"
             className="btn btn-primary mt-5 inline-flex px-5 py-2.5 text-sm"
@@ -254,6 +276,7 @@ export default function AccountsClient() {
           {filteredListings.map((listing) => {
             const seller = sellers[listing.user_id];
             const imageUrl = imageUrls[listing.id];
+            const isVerified = seller?.is_verified === true;
 
             return (
               <Link
@@ -288,14 +311,22 @@ export default function AccountsClient() {
                     {formatNaira(Number(listing.price || 0))}
                   </p>
 
-                  {seller && (
-                    <p className="mt-1 text-sm text-[var(--muted)]">
-                      {seller.username || "Seller"}
-                      {seller.is_verified && (
-                        <span className="ml-1 text-green-400">✓</span>
-                      )}
-                    </p>
-                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {isVerified ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-400">
+                        <MdVerified className="h-3.5 w-3.5" /> Verified Vendor
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-300">
+                        Unverified seller
+                      </span>
+                    )}
+                    {seller && (
+                      <span className="text-sm text-[var(--muted)]">
+                        {seller.username || "Seller"}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Link>
             );
@@ -305,3 +336,4 @@ export default function AccountsClient() {
     </main>
   );
 }
+
