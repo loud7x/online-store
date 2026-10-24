@@ -86,7 +86,7 @@ export default function Header() {
             onClick={closeMenu}
             className="flex items-center gap-2"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)] text-lg font-extrabold text-white">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)] text-lg font-extrabold text-[var(--primary-foreground)]">
               L
             </span>
             <span className="text-xl font-extrabold tracking-tight text-white">
@@ -225,7 +225,7 @@ export default function Header() {
               </div>
               <button
                 type="submit"
-                className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-black transition hover:opacity-90"
+                className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-[var(--primary-foreground)] transition hover:opacity-90"
               >
                 Search
               </button>
