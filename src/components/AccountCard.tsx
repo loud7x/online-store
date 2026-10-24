@@ -10,6 +10,7 @@ interface AccountCardProps {
   account: AccountListing & {
     imageUrl?: string | null;
     seller_id?: string | null;
+    game?: string | null;
   };
 }
 
@@ -18,6 +19,9 @@ export default function AccountCard({ account }: AccountCardProps) {
   const imageUrl = account.imageUrl;
   const sellerId = account.seller_id;
   const sellerName = account.seller?.username || "Seller";
+  const gameName = account.game || "eFootball";
+  const isEfootball = gameName.toLowerCase() === "efootball";
+  const showOvr = isEfootball && (account.overallRating ?? 0) > 0;
 
   const sellerInfo = (
     <>
@@ -35,7 +39,7 @@ export default function AccountCard({ account }: AccountCardProps) {
       <Link
         href={`/accounts/${account.id}`}
         className="absolute inset-0 z-10 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--accent)] sm:rounded-2xl"
-        aria-label={`View ${account.title || "eFootball account"}`}
+        aria-label={`View ${account.title || `${gameName} account`}`}
       />
 
       {/* Account Image (tap to enlarge) */}
@@ -49,7 +53,7 @@ export default function AccountCard({ account }: AccountCardProps) {
           <>
             <img
               src={imageUrl}
-              alt={account.title || "eFootball account"}
+              alt={account.title || `${gameName} account`}
               loading="lazy"
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -58,10 +62,14 @@ export default function AccountCard({ account }: AccountCardProps) {
         ) : (
           <div className="p-3 text-center sm:p-4">
             <div className="text-2xl font-extrabold text-white sm:text-3xl">
-              {account.teamStrength ?? "eFootball"}
+              {isEfootball && account.teamStrength
+                ? account.teamStrength
+                : gameName}
             </div>
             <div className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-[#a7b8df] sm:text-xs">
-              {account.teamStrength ? "Team Strength" : "Account"}
+              {isEfootball && account.teamStrength
+                ? "Team Strength"
+                : "Account"}
             </div>
           </div>
         )}
@@ -76,7 +84,7 @@ export default function AccountCard({ account }: AccountCardProps) {
           </span>
         )}
         <span className="absolute bottom-2 left-2 rounded-md border border-white/10 bg-[#050b24]/85 px-2 py-1 text-[9px] font-semibold text-white backdrop-blur-sm sm:bottom-3 sm:left-3 sm:text-[10px]">
-          {account.platform || "eFootball"}
+          {gameName}
         </span>
       </div>
 
@@ -98,7 +106,7 @@ export default function AccountCard({ account }: AccountCardProps) {
             </button>
             <img
               src={imageUrl}
-              alt={account.title || "eFootball account"}
+              alt={account.title || `${gameName} account`}
               className="max-h-[90vh] max-w-full rounded-lg object-contain"
               onClick={(e) => e.stopPropagation()}
             />
@@ -118,10 +126,17 @@ export default function AccountCard({ account }: AccountCardProps) {
         </div>
 
         <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px] text-[#a7b8df] sm:gap-x-3 sm:text-xs">
-          <span className="rounded bg-[#142653] px-1.5 py-1">
-            OVR {account.overallRating ?? 0}
-          </span>
-          {(account.epicPlayers ?? 0) > 0 && (
+          {account.platform && (
+            <span className="rounded bg-[#142653] px-1.5 py-1">
+              {account.platform}
+            </span>
+          )}
+          {showOvr && (
+            <span className="rounded bg-[#142653] px-1.5 py-1">
+              OVR {account.overallRating}
+            </span>
+          )}
+          {isEfootball && (account.epicPlayers ?? 0) > 0 && (
             <span className="rounded bg-[#142653] px-1.5 py-1">
               {account.epicPlayers} Epic
             </span>
