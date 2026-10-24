@@ -49,6 +49,23 @@ export default function AccountDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
+
+  // Lock page scroll and close on Escape while the image viewer is open
+  useEffect(() => {
+    if (!zoomOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoomOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [zoomOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -232,7 +249,11 @@ export default function AccountDetailPage() {
               <img
                 src={imageUrl}
                 alt={listing.title}
-                className="aspect-video w-full object-cover"
+                onClick={() => {
+                  setZoomed(false);
+                  setZoomOpen(true);
+                }}
+                className="aspect-video w-full cursor-zoom-in object-cover"
               />
             ) : (
               <div className="flex aspect-video w-full items-center justify-center text-sm text-gray-500">
@@ -378,6 +399,40 @@ export default function AccountDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Full-screen image viewer */}
+      {zoomOpen && imageUrl && (
+        <div className="fixed inset-0 z-[9999] bg-black/95">
+          <button
+            type="button"
+            onClick={() => setZoomOpen(false)}
+            className="absolute right-4 top-4 z-10 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white"
+          >
+            ✕ Close
+          </button>
+
+          <div
+            className="flex h-full w-full overflow-auto"
+            style={{ touchAction: "pan-x pan-y pinch-zoom" }}
+            onClick={() => !zoomed && setZoomOpen(false)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageUrl}
+              alt={listing.title}
+              onClick={(e) => {
+                e.stopPropagation();
+                setZoomed((z) => !z);
+              }}
+              className={`m-auto select-none ${
+                zoomed
+                  ? "max-w-none w-[300%] cursor-zoom-out"
+                  : "max-h-full max-w-full object-contain cursor-zoom-in"
+              }`}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
