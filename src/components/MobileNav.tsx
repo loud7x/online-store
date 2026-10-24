@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -6,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { label: "Home", href: "/", icon: "⌂" },
-  { label: "Accounts", href: "/accounts", icon: "⚽" },
+  { label: "Accounts", href: "/accounts", icon: "🎮" },
   { label: "Sell", href: "/sell", icon: "+" },
   { label: "My Listings", href: "/my-listings", icon: "▤" },
   { label: "Profile", href: "/profile", icon: "◉" },
