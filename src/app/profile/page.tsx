@@ -55,7 +55,7 @@ export default function ProfilePage() {
       <div className="mx-auto max-w-xl">
         <div className="mb-6">
           <p className="text-xs font-bold tracking-widest text-[var(--accent)]">
-            LOUDEFOOT
+            LOUDVAULT
           </p>
           <h1 className="mt-2 text-3xl font-extrabold text-white sm:text-4xl">
             My Profile
@@ -72,7 +72,7 @@ export default function ProfilePage() {
             </div>
             <div className="min-w-0">
               <h2 className="text-lg font-bold text-white">
-                {email ? "Welcome back!" : "Welcome to LOUDEFOOT"}
+                {email ? "Welcome back!" : "Welcome to LoudVault"}
               </h2>
               <p className="mt-1 break-all text-sm text-[var(--muted)]">
                 {email ?? "Sign in to access your account."}
@@ -126,7 +126,7 @@ export default function ProfilePage() {
                   Log In
                 </Link>
                 <Link
-                  href="/signup"
+                  href="/register"
                   className="btn btn-secondary flex w-full items-center justify-center px-5 py-3 text-sm"
                 >
                   Create an Account
