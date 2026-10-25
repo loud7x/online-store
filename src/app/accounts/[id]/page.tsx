@@ -48,7 +48,6 @@ export default function AccountDetailPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomed, setZoomed] = useState(false);
 
@@ -170,16 +169,6 @@ export default function AccountDetailPage() {
       cancelled = true;
     };
   }, [id]);
-
-  async function copySellerNumber(number: string) {
-    try {
-      await navigator.clipboard.writeText(number);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setError("Could not copy the number. Please copy it manually.");
-    }
-  }
 
   if (loading) {
     return (
@@ -372,16 +361,6 @@ export default function AccountDetailPage() {
                 <FaPhone size={16} />
                 Phone Vendor
               </a>
-            )}
-
-            {isAvailable && listing.whatsapp_number && (
-              <button
-                type="button"
-                onClick={() => copySellerNumber(listing.whatsapp_number!)}
-                className="btn btn-ghost flex w-full items-center justify-center gap-2 px-5 py-3 text-sm"
-              >
-                {copied ? "Number copied!" : "Copy WhatsApp Number"}
-              </button>
             )}
 
             {isOwner && (
