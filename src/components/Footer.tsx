@@ -1,7 +1,7 @@
 import Link from "next/link";
 // ---- Fill these in. Leave a value empty ("") to hide it. ----
-const SUPPORT_WHATSAPP = ""; // digits only, e.g. "2349138948073"
-const SUPPORT_EMAIL = ""; // e.g. "loudvault@gmail.com"
+const SUPPORT_WHATSAPP = "2349138948073"; // digits only (no + or spaces)
+const SUPPORT_EMAIL    = "loudvault@gmail.com";
 const socialLinks = [
   { label: "Instagram", href: "https://instagram.com/loud7x_" },
 ].filter((item) => item.href);
