@@ -169,11 +169,6 @@ export default function AccountCard({ account }: AccountCardProps) {
               {sellerInfo}
             </div>
           )}
-          {(account.seller?.rating ?? 0) > 0 && (
-            <span className="shrink-0 text-[10px] font-semibold text-[var(--accent)] sm:text-xs">
-              ★ {account.seller?.rating}
-            </span>
-          )}
         </div>
       </div>
     </div>
