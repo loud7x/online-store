@@ -27,7 +27,6 @@ type Seller = {
   id: string;
   username: string | null;
   is_verified: boolean | null;
-  rating: number | null;
 };
 
 function formatNaira(amount: number) {
@@ -133,7 +132,7 @@ export default function AccountDetailPage() {
 
         const { data: sellerData } = await supabase
           .from("users")
-          .select("id, username, is_verified, rating")
+          .select("id, username, is_verified")
           .eq("id", account.user_id)
           .maybeSingle();
 
@@ -337,11 +336,6 @@ export default function AccountDetailPage() {
                   </span>
                 )}
               </div>
-              {seller?.rating != null && (
-                <p className="text-xs text-gray-400">
-                  Rating: {seller.rating.toFixed(1)}
-                </p>
-              )}
             </div>
           </div>
 
