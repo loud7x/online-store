@@ -151,4 +151,3 @@ export default function AccountCard({ account }: AccountCardProps) {
     
   );
 }
-Just replace the content of your AccountCard file with this.
