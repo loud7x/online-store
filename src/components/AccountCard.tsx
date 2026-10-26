@@ -1,6 +1,3 @@
-Here’s the updated file with “Unverified seller” → “Unverified vendor”:
-"use client";
-
 import Link from "next/link";
 import { useState } from "react";
 import { createPortal } from "react-dom";
