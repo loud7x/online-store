@@ -153,7 +153,7 @@ export default function AccountCard({ account }: AccountCardProps) {
           </span>
         ) : (
           <span className="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-300 sm:text-xs">
-            Unverified vendor
+            Unverified Vendor
           </span>
         )}
 
