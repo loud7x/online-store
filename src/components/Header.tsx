@@ -86,8 +86,8 @@ export default function Header() {
             onClick={closeMenu}
             className="flex items-center gap-2"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)] text-lg font-extrabold text-[var(--primary-foreground)]">
-              L
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)] text-sm font-extrabold tracking-tight text-[var(--primary-foreground)]">
+              LV
             </span>
             <span className="text-xl font-extrabold tracking-tight text-white">
               Loud<span className="text-[var(--primary)]">Vault</span>
