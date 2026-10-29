@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import EnableNotifications from "@/components/EnableNotifications";
 
 type Row = {
   id: string;
@@ -138,6 +139,8 @@ export default function MessagesPage() {
     <main className="container-main section-padding">
       <div className="mx-auto max-w-3xl">
         <h1 className="mb-4 text-xl font-bold text-white">Messages</h1>
+
+        <EnableNotifications />
 
         {loading ? (
           <p className="py-10 text-center text-[var(--muted)]">Loading…</p>
