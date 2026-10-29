@@ -2,108 +2,217 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Conversation = {
+type Row = {
   id: string;
-  listing_id: string;
-  buyer_id: string;
-  seller_id: string;
-  created_at: string;
+  title: string;
+  otherName: string;
+  otherRole: "Buyer" | "Vendor";
+  lastBody: string;
+  lastAt: string;
+  unread: number;
 };
-type Message = { id: string; conversation_id: string; sender_id: string; body: string; created_at: string };
-type Listing = { id: string; title: string; listing_status?: string };
 
 function formatTime(value: string) {
-  const date = new Date(value);
-  return date.toLocaleDateString("en-NG", { day: "numeric", month: "short" }) + " " + date.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" });
+  return new Date(value).toLocaleString("en-NG", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function MessagesPage() {
-  const router = useRouter();
-  const [listingId, setListingId] = useState<string | null>(null);
-  useEffect(() => { setListingId(new URLSearchParams(window.location.search).get("listingId")); }, []);
-  const [items, setItems] = useState<Array<{ conversation: Conversation; title: string; lastMessage: string; lastAt: string; otherLabel: string }>>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(true);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const { data: auth, error: authError } = await supabase.auth.getUser();
-    if (authError || !auth.user) {
-      setError("Please log in to use private messages.");
+    const { data: auth } = await supabase.auth.getUser();
+    const me = auth.user?.id;
+    if (!me) {
+      setLoggedIn(false);
       setLoading(false);
       return;
     }
-    const uid = auth.user.id;
 
-    if (listingId) {
-      const { data: listing, error: listingError } = await supabase
-        .from("listings")
-        .select("id,user_id,title,listing_status")
-        .eq("id", listingId)
-        .maybeSingle();
-      if (listingError || !listing) {
-        setError("This listing could not be found."); setLoading(false); return;
-      }
-      if (listing.user_id === uid) {
-        setError("You cannot message yourself about your own listing."); setLoading(false); return;
-      }
-      if (listing.listing_status === "sold") {
-        setError("This account has been sold and is no longer available."); setLoading(false); return;
-      }
-      const { data: existing, error: findError } = await supabase
-        .from("conversations").select("id")
-        .eq("listing_id", listingId).eq("buyer_id", uid).maybeSingle();
-      if (findError) { setError(findError.message); setLoading(false); return; }
-      let conversationId = existing?.id;
-      if (!conversationId) {
-        const { data: created, error: createError } = await supabase
-          .from("conversations")
-          .insert({ listing_id: listingId, buyer_id: uid, seller_id: listing.user_id })
-          .select("id").single();
-        if (createError) { setError(`Could not start conversation: ${createError.message}`); setLoading(false); return; }
-        conversationId = created.id;
-      }
-      router.replace(`/messages/${conversationId}`);
+    const { data: convs, error: convError } = await supabase
+      .from("conversations")
+      .select("id,listing_id,buyer_id,seller_id,created_at")
+      .or(`buyer_id.eq.${me},seller_id.eq.${me}`)
+      .order("created_at", { ascending: false });
+
+    if (convError) {
+      setError(convError.message);
+      setLoading(false);
       return;
     }
 
-    const { data: conversations, error: conversationError } = await supabase
-      .from("conversations").select("id,listing_id,buyer_id,seller_id,created_at")
-      .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`).order("created_at", { ascending: false });
-    if (conversationError) { setError(conversationError.message); setLoading(false); return; }
-    const rows = conversations ?? [];
-    if (!rows.length) { setItems([]); setLoading(false); return; }
-    const listingIds = [...new Set(rows.map((c) => c.listing_id))];
-    const convIds = rows.map((c) => c.id);
-    const [{ data: listings }, { data: messages }] = await Promise.all([
-      supabase.from("listings").select("id,title,listing_status").in("id", listingIds),
-      supabase.from("messages").select("id,conversation_id,sender_id,body,created_at").in("conversation_id", convIds).order("created_at", { ascending: false }),
+    const list = convs ?? [];
+    if (list.length === 0) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const convIds = list.map((c) => c.id);
+    const listingIds = Array.from(new Set(list.map((c) => c.listing_id)));
+    const otherIds = Array.from(
+      new Set(list.map((c) => (c.buyer_id === me ? c.seller_id : c.buyer_id)))
+    );
+
+    const [listingsRes, usersRes, msgsRes] = await Promise.all([
+      supabase.from("listings").select("id,title").in("id", listingIds),
+      supabase.from("users").select("id,username").in("id", otherIds),
+      supabase
+        .from("messages")
+        .select("conversation_id,sender_id,body,is_read,created_at")
+        .in("conversation_id", convIds)
+        .order("created_at", { ascending: false })
+        .limit(1000),
     ]);
-    const listingMap = new Map((listings ?? []).map((l: Listing) => [l.id, l]));
-    const lastByConversation = new Map<string, Message>();
-    for (const message of messages ?? []) if (!lastByConversation.has(message.conversation_id)) lastByConversation.set(message.conversation_id, message as Message);
-    setItems(rows.map((conversation) => {
-      const last = lastByConversation.get(conversation.id);
+
+    const titles = new Map<string, string>();
+    (listingsRes.data ?? []).forEach((l) => titles.set(l.id, l.title));
+
+    const names = new Map<string, string>();
+    (usersRes.data ?? []).forEach((u) => names.set(u.id, u.username ?? ""));
+
+    const last = new Map<string, { body: string; at: string }>();
+    const unread = new Map<string, number>();
+    (msgsRes.data ?? []).forEach((m) => {
+      if (!last.has(m.conversation_id)) {
+        last.set(m.conversation_id, { body: m.body ?? "", at: m.created_at });
+      }
+      if (m.sender_id !== me && m.is_read === false) {
+        unread.set(m.conversation_id, (unread.get(m.conversation_id) ?? 0) + 1);
+      }
+    });
+
+    const built: Row[] = list.map((c) => {
+      const iAmBuyer = c.buyer_id === me;
+      const otherId = iAmBuyer ? c.seller_id : c.buyer_id;
+      const lm = last.get(c.id);
       return {
-        conversation,
-        title: listingMap.get(conversation.listing_id)?.title ?? "Account listing",
-        lastMessage: last?.body ?? "No messages yet — say hello.",
-        lastAt: last?.created_at ?? conversation.created_at,
-        otherLabel: conversation.buyer_id === uid ? "Seller" : "Buyer",
+        id: c.id,
+        title: titles.get(c.listing_id) ?? "Account listing",
+        otherName: names.get(otherId) || (iAmBuyer ? "Vendor" : "Buyer"),
+        otherRole: iAmBuyer ? "Vendor" : "Buyer",
+        lastBody: lm?.body ?? "No messages yet",
+        lastAt: lm?.at ?? c.created_at,
+        unread: unread.get(c.id) ?? 0,
       };
-    }));
+    });
+
+    built.sort((a, b) => +new Date(b.lastAt) - +new Date(a.lastAt));
+    setRows(built);
     setLoading(false);
-  }, [listingId, router]);
+  }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  return <main className="container-main section-padding">
-    <div className="mb-8"><h1 className="text-2xl sm:text-3xl font-semibold text-white">Messages</h1><p className="mt-1 text-sm text-[var(--muted)]">Private conversations about LOUDEFOOT listings.</p></div>
-    {loading ? <div className="rounded-xl border border-[var(--border)] p-8 text-center text-[var(--muted)]">Loading your messages…</div> : error ? <div className="rounded-xl border border-red-500/40 p-5 text-sm text-white"><p>{error}</p>{error.includes("log in") && <Link className="mt-3 inline-block text-[var(--primary)] underline" href="/login">Log in</Link>}</div> : items.length === 0 ? <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-10 text-center"><p className="text-white">No conversations yet.</p><p className="mt-2 text-sm text-[var(--muted)]">Open an account listing and choose DM Seller to start a private chat.</p><Link href="/accounts" className="btn btn-primary mt-5 inline-flex px-5 py-2.5 text-sm">Browse accounts</Link></div> : <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] divide-y divide-[var(--border)]">
-      {items.map((item) => <Link key={item.conversation.id} href={`/messages/${item.conversation.id}`} className="block p-4 transition-colors hover:bg-[var(--card-hover)]"><div className="flex items-center justify-between gap-3"><span className="font-medium text-white">{item.otherLabel}</span><span className="text-xs text-[var(--muted-foreground)]">{formatTime(item.lastAt)}</span></div><p className="mt-1 truncate text-xs text-[var(--primary)]">{item.title}</p><p className="mt-1 truncate text-sm text-[var(--muted)]">{item.lastMessage}</p></Link>)}
-    </div>}
-  </main>;
+  // Live updates: new messages and read-status changes
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("inbox-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        () => {
+          void load();
+        }
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [load]);
+
+  return (
+    <main className="container-main section-padding">
+      <div className="mx-auto max-w-3xl">
+        <h1 className="mb-4 text-xl font-bold text-white">Messages</h1>
+
+        {loading ? (
+          <p className="py-10 text-center text-[var(--muted)]">Loading…</p>
+        ) : !loggedIn ? (
+          <p className="py-10 text-center text-white">
+            Please log in to see your messages.
+            <Link href="/login" className="ml-2 text-[var(--primary)] underline">
+              Log in
+            </Link>
+          </p>
+        ) : error ? (
+          <p className="text-sm text-red-400">{error}</p>
+        ) : rows.length === 0 ? (
+          <div className="rounded-xl border border-[var(--border)] p-8 text-center">
+            <p className="text-white">No conversations yet.</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Open an account and tap Contact Vendor to start chatting.
+            </p>
+            <Link
+              href="/accounts"
+              className="btn btn-primary mt-4 inline-block px-5 py-2 text-sm"
+            >
+              Browse Accounts
+            </Link>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-[var(--border)]">
+            {rows.map((r) => (
+              <Link
+                key={r.id}
+                href={`/messages/${r.id}`}
+                className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--card)] p-4 last:border-b-0 hover:bg-white/5"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 font-bold text-white">
+                  {r.otherName.charAt(0).toUpperCase()}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p
+                      className={`truncate text-sm text-white ${
+                        r.unread > 0 ? "font-bold" : "font-semibold"
+                      }`}
+                    >
+                      {r.otherName}{" "}
+                      <span className="text-xs font-normal text-[var(--muted)]">
+                        · {r.otherRole}
+                      </span>
+                    </p>
+                    <span className="shrink-0 text-[10px] text-[var(--muted)]">
+                      {formatTime(r.lastAt)}
+                    </span>
+                  </div>
+
+                  <p className="truncate text-xs text-[var(--primary)]">{r.title}</p>
+
+                  <p
+                    className={`truncate text-sm ${
+                      r.unread > 0 ? "text-white" : "text-[var(--muted)]"
+                    }`}
+                  >
+                    {r.lastBody}
+                  </p>
+                </div>
+
+                {r.unread > 0 && (
+                  <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                    {r.unread > 99 ? "99+" : r.unread}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
+  );
 }
