@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { FaWhatsapp, FaPhone } from "react-icons/fa";
 import { MdVerified } from "react-icons/md";
 import { createClient } from "@/lib/supabase/client";
@@ -39,6 +39,7 @@ function formatNaira(amount: number) {
 
 export default function AccountDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string | undefined;
 
   const [listing, setListing] = useState<Listing | null>(null);
@@ -50,6 +51,7 @@ export default function AccountDetailPage() {
   const [error, setError] = useState("");
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomed, setZoomed] = useState(false);
+  const [contacting, setContacting] = useState(false);
 
   // Lock page scroll and close on Escape while the image viewer is open
   useEffect(() => {
@@ -199,7 +201,7 @@ export default function AccountDetailPage() {
   const isArchived = status === "archived";
   const isPending = status === "pending";
   const isAvailable = status === "active";
-  const sellerName = seller?.username || "Seller";
+  const sellerName = seller?.username || "Vendor";
   const isVerifiedSeller = seller?.is_verified === true;
   const gameName = listing.game || "eFootball";
 
@@ -214,6 +216,65 @@ export default function AccountDetailPage() {
     : null;
 
   const callUrl = whatsappDigits ? `tel:+${whatsappDigits}` : null;
+
+  // Open (or create) the in-site chat with this vendor
+  async function contactVendor() {
+    if (!listing || contacting) return;
+    setContacting(true);
+    setError("");
+
+    try {
+      const supabase = createClient();
+
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData.user;
+
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      if (user.id === listing.user_id) return;
+
+      const { data: existing, error: findError } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("listing_id", listing.id)
+        .eq("buyer_id", user.id)
+        .maybeSingle();
+
+      if (findError) {
+        setError(findError.message);
+        return;
+      }
+
+      if (existing?.id) {
+        router.push(`/messages/${existing.id}`);
+        return;
+      }
+
+      const { data: created, error: createError } = await supabase
+        .from("conversations")
+        .insert({
+          listing_id: listing.id,
+          buyer_id: user.id,
+          seller_id: listing.user_id,
+        })
+        .select("id")
+        .single();
+
+      if (createError || !created) {
+        setError(createError?.message || "Could not start the chat.");
+        return;
+      }
+
+      router.push(`/messages/${created.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setContacting(false);
+    }
+  }
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
@@ -307,7 +368,7 @@ export default function AccountDetailPage() {
             </div>
           )}
 
-          {/* Seller info */}
+          {/* Vendor info */}
           <div className="flex items-center gap-3 rounded-xl border border-white/10 p-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 font-bold">
               {sellerName.charAt(0).toUpperCase()}
@@ -331,7 +392,7 @@ export default function AccountDetailPage() {
           {/* Unverified warning */}
           {isAvailable && !isVerifiedSeller && !isOwner && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-              <p className="font-semibold">Be careful: this seller is not verified.</p>
+              <p className="font-semibold">Be careful: this vendor is not verified.</p>
               <p className="mt-1 text-red-300/90">
                 Do not send money before you have checked the account yourself.
                 Prefer verified vendors when you can.
@@ -341,6 +402,17 @@ export default function AccountDetailPage() {
 
           {/* Action buttons */}
           <div className="space-y-3">
+            {isAvailable && !isOwner && (
+              <button
+                type="button"
+                onClick={contactVendor}
+                disabled={contacting}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600 px-5 py-3 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-60"
+              >
+                {contacting ? "Opening chat…" : "Contact Vendor"}
+              </button>
+            )}
+
             {isAvailable && whatsappUrl && (
               <a
                 href={whatsappUrl}
