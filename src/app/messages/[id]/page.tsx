@@ -34,6 +34,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
       .select("id,conversation_id,sender_id,body,created_at").eq("conversation_id", id).order("created_at", { ascending: true });
     if (messageError) setError(messageError.message);
     else setMessages((messageRows ?? []) as Message[]);
+    await supabase.from("messages").update({ is_read: true }).eq("conversation_id", id).neq("sender_id", auth.user.id).eq("is_read", false);
     setLoading(false);
   }, [id]);
 
@@ -46,7 +47,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
     setSending(true); setError("");
     const supabase = createClient();
     const { data, error: insertError } = await supabase.from("messages")
-      .insert({ conversation_id: conversation.id, sender_id: userId, body })
+      .insert({ conversation_id: conversation.id, sender_id: userId, body, is_read: false })
       .select("id,conversation_id,sender_id,body,created_at").single();
     if (insertError) setError(insertError.message);
     else { setMessages((previous) => [...previous, data as Message]); setText(""); }
@@ -60,10 +61,11 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
       event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${id}`,
     }, (payload) => {
       const incoming = payload.new as Message;
+      if (incoming.sender_id !== userId) void supabase.from("messages").update({ is_read: true }).eq("id", incoming.id);
       setMessages((previous) => previous.some((message) => message.id === incoming.id) ? previous : [...previous, incoming]);
     }).subscribe();
     return () => { void supabase.removeChannel(channel); };
-  }, [conversation, id]);
+  }, [conversation, id, userId]);
 
   return <main className="container-main section-padding"><div className="mx-auto flex max-w-3xl flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)]" style={{ minHeight: "65vh", maxHeight: "850px" }}>
     <header className="border-b border-[var(--border)] p-4"><Link href="/messages" className="text-sm text-[var(--primary)]">← All messages</Link><h1 className="mt-2 font-semibold text-white">{conversation ? (conversation.buyer_id === userId ? "Vendor" : "Buyer") : "Private chat"}</h1><p className="mt-1 truncate text-xs text-[var(--muted)]">{title}</p></header>
