@@ -34,6 +34,15 @@ export const metadata: Metadata = {
     "account trading",
     "Nigeria",
   ],
+  manifest: "/manifest.json",
+  icons: {
+    apple: "/icon-192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "LoudVault",
+    statusBarStyle: "black",
+  },
   openGraph: {
     title: "LoudVault — Game Account Marketplace",
     description:
